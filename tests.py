@@ -32,11 +32,14 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(5, evalExpresssion("(+ 2 3) (+ 2932 434)")[0].value)
 		self.assertEqual(" (+ 2932 434)", evalExpresssion("(+ 2 3) (+ 2932 434)")[1])
 		self.assertEqual(36, evalExpresssion("(* 6 (+ 2 3 1))")[0].value)
+		self.assertRaises(BadInputException, evalExpresssion, (")"))
 		
 	def testIfOperator(self):
 		self.assertEqual(11, evalExpresssion("(if 43 11 10)")[0].value)
 		self.assertEqual(11, evalExpresssion("(if (- 4 3) 11 10)")[0].value)
 		self.assertEqual(10, evalExpresssion("(if NIL 11 10)")[0].value)
+		
+		self.assertRaises(BadInputException, evalExpresssion, ("(if T)"))
 
 	def testLet(self):
 		self.assertEqual(5, evalExpresssion("(let ((x 5)) x)")[0].value)

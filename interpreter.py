@@ -12,6 +12,10 @@ class ExprRes:
 	def __init__(self, type, val):
 		self.type = type
 		self.value = val
+		
+class BadInputException(Exception):
+	def __init__(self, msg):
+		self.msg = msg
 
 funDict = {
 	"+": functions.plus,
@@ -25,26 +29,20 @@ operatorsDict = {
 }
 
 def evalExpr(text, env):
-	print "evalExpr"
-	print text
 	
 	(token, text) = nextToken(text)
 	
 	if token.tokenId == tokenizer.OPENING_PARENTHESIS:
-		#return eval_list($_[0]) . "\n";
 		return evalList(text, env)
 	elif token.tokenId == tokenizer.CLOSING_PARENTHESIS or token.tokenId == tokenizer.SYNTAX_ERROR:
-		if(token.tokenId == tokenizer.SYNTAX_ERROR):
-			print "real syntax error\n"
-		print "syntax error\n"
-		return (ExprRes(SYMBOL, "NIL"), text)
+		raise BadInputException("Syntax error")
 	elif token.tokenId == tokenizer.EOF:
 		return (ExprRes(SYMBOL, "NIL"), text)
 	elif token.tokenId == tokenizer.SYMBOL:
 		if token.value in env:
 			return (env[token.value], text)
-		print  "The variable " + token.value + " is unbound"
-		return (ExprRes(SYMBOL, "NIL"), text)
+		raise BadInputException("The variable " + token.value + " is unbound")
+		
 	else:
 		return (ExprRes(INT, int(token.value)), text)
 		
@@ -54,13 +52,10 @@ def evalExpresssion(text):
 def evalList(text, env):
 	(token, text) = nextToken(text)
 	if(token.tokenId != tokenizer.SYMBOL):
-		print "the first element of list should be a symbol\n"
-		return
+		raise BadInputException("the first element of list should be a symbol\n")
 	
 	symbol = token.value
 	params = []
-
-	print "eval_list, symbol:" + symbol + "\n"
 	
 	if(symbol in funDict):
 		while len(text) > 0:
@@ -75,13 +70,12 @@ def evalList(text, env):
 			elif token.tokenId == tokenizer.SYMBOL:
 				if token.value in env:
 					params.append(env[token.value])
-				print  "The variable " + token.value + " is unbound"
+				else:
+					raise BadInputException("The variable " + token.value + " is unbound")
 			elif token.tokenId == tokenizer.SYNTAX_ERROR:
-				print "Syntax error\n"
-				return (ExprRes(SYMBOL, "NIL"), text)
+				raise BadInputException("Syntax error")
 	
 	elif symbol in operatorsDict:
-		print "SPECIAL OPERATOR" + symbol + "\n"
 		while len(text) > 0:
 			(token, text) = nextToken(text)
 			if token.tokenId == tokenizer.OPENING_PARENTHESIS:
@@ -94,8 +88,10 @@ def evalList(text, env):
 			elif token.tokenId == tokenizer.SYMBOL:
 				params.append(token.value)
 			elif token.tokenId == SYNTAX_ERROR:
-				print "Syntax error\n"
-				return (ExprRes(SYMBOL, "NIL"), text)
+				raise BadInputException("Syntax error")
+				
+	else:
+		raise BadInputException("Function " + symbol + " is undefined")
 
 def cutList(text):
 	opened = 1
@@ -113,8 +109,7 @@ def cutList(text):
 			opened -= 1
 			result += " )"
 		elif token.tokenId == tokenizer.SYNTAX_ERROR:
-			print "Syntax error\n"
-			break
+			raise BadInputException("Syntax error")
 		else:
 			result += " " + token.value
 			
@@ -123,8 +118,7 @@ def loadInitializationList(text, env):
 	(token, text) = nextToken(text)
 	
 	if token.tokenId != tokenizer.OPENING_PARENTHESIS:
-		print "Syntax error\n"
-		return
+		raise BadInputException("Syntax error")
 		
 	while len(text) > 0:
 		(token, text) = nextToken(text)
@@ -138,14 +132,12 @@ def loadInitializationList(text, env):
 				(res, text) = evalExpr(text, env)
 				newVars[token.value] = res
 			else:
-				print "Syntax error\n"
+				raise BadInputException("Syntax error")
 				
 			(token, text) = nextToken(text)
 			if token.tokenId != tokenizer.CLOSING_PARENTHESIS:
-				print "Syntax error\n"
-				return
+				raise BadInputException("Syntax error")
 		elif token.tokenId == tokenizer.CLOSING_PARENTHESIS:
 			return (newVars, text)
 		else:
-			print "Syntax error\n"
-			return
+			raise BadInputException("Syntax error")
