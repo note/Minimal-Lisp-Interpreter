@@ -25,7 +25,8 @@ funDict = {
 
 operatorsDict = {
 	"if": special_operators.ifOperator,
-	"let": special_operators.let
+	"let": special_operators.let,
+	"progn": special_operators.progn
 }
 
 def evalExpr(text, env):

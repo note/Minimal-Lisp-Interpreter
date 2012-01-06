@@ -46,6 +46,13 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(20, evalExpresssion("(let ((x (* 2 (+ 5 5)))) x)")[0].value)
 		self.assertEqual(6, evalExpresssion("(let ((x 2) (y 4)) (+ x y))")[0].value)
 		self.assertEqual(14, evalExpresssion("(let ((x 10)) (let ((y 4)) (+ x y)))")[0].value)
+		
+	def testProgn(self):
+		self.assertEqual(5, evalExpresssion("(progn 3 5)")[0].value)
+		self.assertEqual(4, evalExpresssion("(progn (+ 3 4) (- 5 1))")[0].value)
+	
+	#def testSetq(self):
+	#	self.assertEqual(99, evalExpresssion("(let ((x 2)) (progn (setq x 99) x))")[0].value)
 
 if __name__ == "__main__":
 	unittest.main()

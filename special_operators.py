@@ -16,3 +16,12 @@ def let(params, env):
 	newEnv = dict(env.items() + v.items())
 	
 	return interpreter.evalExpr(params[1], newEnv)[0]
+	
+def progn(params, env):
+	while len(params)>1:
+		interpreter.evalExpr(params.pop(0), env)
+	
+	if len(params)>0:
+		return interpreter.evalExpr(params.pop(), env)[0]
+	else:
+		return interpreter.ExprRes(SYMBOL, "NIL")
