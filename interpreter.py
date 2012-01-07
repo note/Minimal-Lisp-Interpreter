@@ -26,7 +26,8 @@ funDict = {
 operatorsDict = {
 	"if": special_operators.ifOperator,
 	"let": special_operators.let,
-	"progn": special_operators.progn
+	"progn": special_operators.progn,
+	"setq" : special_operators.setq
 }
 
 def evalExpr(text, env):
@@ -140,5 +141,17 @@ def loadInitializationList(text, env):
 				raise BadInputException("Syntax error")
 		elif token.tokenId == tokenizer.CLOSING_PARENTHESIS:
 			return (newVars, text)
+		else:
+			raise BadInputException("Syntax error")
+		
+def evalSetqList(text, env):
+	while len(text) > 0:
+		(token, text) = nextToken(text)
+		
+		if token.tokenId == tokenizer.SYMBOL:
+			(res, text) = evalExpr(text, env)
+			env[token.value] = res
+		elif token.tokenId == tokenizer.CLOSING_PARENTHESIS:
+			return
 		else:
 			raise BadInputException("Syntax error")

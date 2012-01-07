@@ -25,3 +25,24 @@ def progn(params, env):
 		return interpreter.evalExpr(params.pop(), env)[0]
 	else:
 		return interpreter.ExprRes(SYMBOL, "NIL")
+		
+def setq(params, env):
+	if len(params) % 2 == 1:
+		raise interpreter.BadInputException("Invalid number of arguments for setq")
+	
+	print params
+	print "before"
+	print env
+	
+	key = None
+	while len(params)>0:
+		key = params.pop(0)
+		env[key] = interpreter.evalExpr(params.pop(0), env)[0]
+	
+	print "after"
+	print env
+	
+	if key:
+		return env[key]
+	else:
+		return interpreter.ExprRes(SYMBOL, "NIL")

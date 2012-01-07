@@ -51,8 +51,20 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(5, evalExpresssion("(progn 3 5)")[0].value)
 		self.assertEqual(4, evalExpresssion("(progn (+ 3 4) (- 5 1))")[0].value)
 	
-	#def testSetq(self):
-	#	self.assertEqual(99, evalExpresssion("(let ((x 2)) (progn (setq x 99) x))")[0].value)
+	def testSetq(self):
+		self.assertEqual(12, evalExpresssion("(let ((a 10)) (setq a 12))")[0].value)
+		self.assertEqual(99, evalExpresssion("(let ((x 2)) (progn (setq x 99) x))")[0].value)
+		self.assertEqual(2, evalExpresssion("(let ((x 2)) (progn (let ((x 3)) (setq x 4)) x))")[0].value)
+		
+	''' To test if closures work:
+	(let ((x 0)) (defparameter
+	     *fn1* (list 
+		    #'(lambda () (format t "~a" x))
+		    #'(lambda () (setf x (1+ x))))))
+		    
+	and now call a few times:
+	(funcall (nth 1 *fn1*))
+	(funcall (nth 0 *fn1*))'''
 
 if __name__ == "__main__":
 	unittest.main()
