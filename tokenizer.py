@@ -50,7 +50,7 @@ def nextToken(text):
 	text = text.lstrip()
 	
 	if(len(text) == 0):
-		return Token(EOF, None);
+		return (Token(EOF, None), "");
 
 	for (id, p) in patterns():
 		res = p.search(text)
