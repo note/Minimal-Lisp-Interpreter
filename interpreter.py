@@ -11,15 +11,11 @@ FLOAT = 2
 DOUBLE = 3
 STRING = 4;
 OPENING_PARENTHESIS = 5
+LIST = 5 # OPENING_PARENTHESIS and LIST have purposely the same value!
 CLOSING_PARENTHESIS = 6
 SYMBOL = 7
 RATIO = 8
 EOF = 9
-
-class ExprRes:
-	def __init__(self, type, val):
-		self.type = type
-		self.value = val
 		
 class LispForm:
 	def __init__(self, type, value):
@@ -42,10 +38,21 @@ class LispForm:
 			else:
 				raise BadInputException("The first element of list should be a symbol\n")
 		elif self.type == tokenizer.INT:
-			return ExprRes(self.type, int(self.value))
+			return LispForm(self.type, int(self.value))
+		elif self.type == tokenizer.SYMBOL:
+			if self.value in env:
+				return env[self.value]
+			raise BadInputException("The variable " + self.value + " is unbound")
 		else:
-			return ExprRes(self.type, self.value)
-				
+			return LispForm(self.type, self.value)
+			
+	def getValue(self):
+		res = self.value
+		for ch in self.children:
+			res += " " + str(ch.getValue())
+		if self.type == tokenizer.OPENING_PARENTHESIS:
+			res += " )"
+		return res
 		
 class BadInputException(Exception):
 	def __init__(self, msg):
@@ -64,7 +71,12 @@ class Interpreter:
 		"let": special_operators.let,
 		"progn": special_operators.progn,
 		"setq" : special_operators.setq,
-		"quote" : special_operators.quote
+		"quote" : special_operators.quote,
+		"list" : special_operators.list,
+		"car" : special_operators.car,
+		"cdr" : special_operators.cdr,
+		"eval" : special_operators.eval,
+		"atom" : special_operators.atom
 	}
 	
 	def read(self, text):
@@ -114,18 +126,18 @@ class Interpreter:
 		elif token.tokenId == tokenizer.CLOSING_PARENTHESIS or token.tokenId == tokenizer.SYNTAX_ERROR:
 			raise BadInputException("Syntax error")
 		elif token.tokenId == tokenizer.EOF:
-			return (ExprRes(SYMBOL, "NIL"), text)
+			return (LispForm(SYMBOL, "NIL"), text)
 		elif token.tokenId == tokenizer.SYMBOL:
 			if token.value in env:
 				return (env[token.value], text)
 			raise BadInputException("The variable " + token.value + " is unbound")
 			
 		else:
-			return (ExprRes(INT, int(token.value)), text)'''
+			return (LispForm(INT, int(token.value)), text)'''
 			
 	def evalExpression(self, text):
 		print "???" + text
-		return self.evalExpr(text, {"NIL" : ExprRes(SYMBOL, "NIL"), "T" : ExprRes(SYMBOL, "T")})
+		return self.evalExpr(text, {"NIL" : LispForm(SYMBOL, "NIL"), "T" : LispForm(SYMBOL, "T")})
 
 	def evalList(self, text, env):
 		(token, text) = nextToken(text)
@@ -144,7 +156,7 @@ class Interpreter:
 				elif token.tokenId == tokenizer.CLOSING_PARENTHESIS:
 					return (funDict[symbol](params), text)
 				elif token.tokenId == tokenizer.INT:
-					params.append(ExprRes(INT, int(token.value)))
+					params.append(LispForm(INT, int(token.value)))
 				elif token.tokenId == tokenizer.SYMBOL:
 					if token.value in env:
 						params.append(env[token.value])
@@ -202,7 +214,7 @@ class Interpreter:
 			(token, text) = nextToken(text)
 			
 			if token.tokenId == tokenizer.SYMBOL:
-				newVars[token.value] = ExprRes(SYMBOL, "NIL")
+				newVars[token.value] = LispForm(SYMBOL, "NIL")
 			elif token.tokenId == tokenizer.OPENING_PARENTHESIS:
 				(token, text) = nextToken(text)
 				
