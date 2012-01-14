@@ -61,27 +61,29 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(12, self.interpreter.evalExpression("(let ((x 2) (y 6)) (progn (setq x 4 y 8) (+ x y)))").getValue())
 		
 	def testQuote(self):
-		self.assertEqual("( + x 5 )", self.interpreter.evalExpression("(quote (+ x 5))").getValue())
+		self.assertEqual("(+ x 5)", self.interpreter.evalExpression("(quote (+ x 5))").getValue())
 		self.assertEqual("x", self.interpreter.evalExpression("(let ((x 12)) (quote x))").getValue())
-		self.assertEqual("( x )", self.interpreter.evalExpression("(quote (x))").getValue())
+		self.assertEqual("(x)", self.interpreter.evalExpression("(quote (x))").getValue())
+		self.assertEqual("(quote (x))", self.interpreter.evalExpression("(quote (quote (x)))").getValue())
 		
-	def testLiteralQuote(self):
-		self.assertEqual("( + x 5 )", self.interpreter.evalExpression("'(+ x 5)").getValue())
+	'''def testLiteralQuote(self):
+		self.assertEqual("(+ x 5)", self.interpreter.evalExpression("'(+ x 5)").getValue())
 		self.assertEqual("x", self.interpreter.evalExpression("(let ((x 12)) 'x)").getValue())
-		self.assertEqual("( x )", self.interpreter.evalExpression("'(x)").getValue())
+		self.assertEqual("(x)", self.interpreter.evalExpression("'(x)").getValue())
+		self.assertEqual("'(x)", self.interpreter.evalExpression("''(x)").getValue())'''
 		
-	def testBackQuote(self):
-		self.assertEqual("( + x 5 )", self.interpreter.evalExpression("`(+ x 5)").getValue())
-		self.assertEqual("x", self.interpreter.evalExpression("(let ((x 12)) `x)").getValue())
-		self.assertEqual("( x )", self.interpreter.evalExpression("`x").getValue())
-		self.assertEqual("( + 4 10 )", self.interpreter.evalExpression("`(+ 4 ,(* 2 5))"))
-		self.assertEqual("( + 4 10 )", self.interpreter.evalExpression("`(+ ,4 ,(* 2 5))"))
+	'''def testBackQuote(self):
+		#self.assertEqual("(+ x 5)", self.interpreter.evalExpression("`(+ x 5)").getValue())
+		#self.assertEqual("x", self.interpreter.evalExpression("(let ((x 12)) `x)").getValue())
+		#self.assertEqual("x", self.interpreter.evalExpression("`x").getValue())
+		self.assertEqual("(+ 4 10)", self.interpreter.evalExpression("`(+ 4 ,(* 2 5))").getValue())
+		self.assertEqual("(+ (* 3 3) 10)", self.interpreter.evalExpression("`(+ (* 3 3) ,(* 2 5))").getValue())'''
 		
 	def testList(self):
 		self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(list (+ x 5))"))
-		self.assertEqual("( 3 4 5 )", self.interpreter.evalExpression("(list 3 4 5)").getValue())
-		self.assertEqual("( 1 2 3 )", self.interpreter.evalExpression("(let ((x 2)) (list 1 x 3))").getValue())
-		self.assertEqual("( 10 20 ( 30 40 ) )", self.interpreter.evalExpression("(list 10 20 (list 30 40))").getValue())
+		self.assertEqual("(3 4 5)", self.interpreter.evalExpression("(list 3 4 5)").getValue())
+		self.assertEqual("(1 2 3)", self.interpreter.evalExpression("(let ((x 2)) (list 1 x 3))").getValue())
+		self.assertEqual("(10 20 (30 40))", self.interpreter.evalExpression("(list 10 20 (list 30 40))").getValue())
 		#self.assertEqual("NIL", self.interpreter.evalExpression("(list)").getValue())
 		self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(list))"))
 		
@@ -89,14 +91,14 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual("+", self.interpreter.evalExpression("(car (quote (+ 2 4)))").getValue())
 		self.assertEqual(5, self.interpreter.evalExpression("(car (list 5 6))").getValue())
 		self.assertEqual(5, self.interpreter.evalExpression("(car (list (+ 1 4) 6))").getValue())
-		self.assertEqual("( 5 6 )", self.interpreter.evalExpression("(car (list (list 5 6) 9 10))").getValue())
+		self.assertEqual("(5 6)", self.interpreter.evalExpression("(car (list (list 5 6) 9 10))").getValue())
 		
 	def testCdr(self):
-		self.assertEqual("( 2 4 )", self.interpreter.evalExpression("(cdr (quote (+ 2 4)))").getValue())
+		self.assertEqual("(2 4)", self.interpreter.evalExpression("(cdr (quote (+ 2 4)))").getValue())
 		self.assertEqual("NIL", self.interpreter.evalExpression("(cdr (list 2))").getValue())
 		self.assertEqual("NIL", self.interpreter.evalExpression("(cdr (list))").getValue())
-		self.assertEqual("( ( * 3 4 ) )", self.interpreter.evalExpression("(cdr (quote (2 (* 3 4))))").getValue())
-		self.assertEqual("( 6 )", self.interpreter.evalExpression("(cdr (list 5 6))").getValue())
+		self.assertEqual("((* 3 4))", self.interpreter.evalExpression("(cdr (quote (2 (* 3 4))))").getValue())
+		self.assertEqual("(6)", self.interpreter.evalExpression("(cdr (list 5 6))").getValue())
 		self.assertEqual(6, self.interpreter.evalExpression("(car (cdr (list 5 6 9 10)))").getValue())
 		
 	def testEval(self):
@@ -121,7 +123,10 @@ class TestInterpreter(unittest.TestCase):
 		    
 	and now call a few times:
 	(funcall (nth 1 *fn1*))
-	(funcall (nth 0 *fn1*))'''
+	(funcall (nth 0 *fn1*))
+	
+	another interesting test:
+	(let ((sq 12)) (flet ((sq (x) (* x x))) (sq sq)))'''
 
 if __name__ == "__main__":
 	unittest.main()

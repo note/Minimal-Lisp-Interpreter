@@ -17,46 +17,14 @@ SYMBOL = 7
 RATIO = 8
 EOF = 9
 		
-class LispForm:
-	def __init__(self, type, value):
-		self.children = []
-		self.type = type
-		self.value = value
-		
-	def evaluate(self, env, funDict, operatorsDict):
-		if self.type == tokenizer.OPENING_PARENTHESIS:
-			if self.children[0].type == tokenizer.SYMBOL:
-				if self.children[0].value in operatorsDict:
-					return operatorsDict[self.children[0].value](self.children[1:], env, funDict, operatorsDict)
-				elif self.children[0].value in funDict:
-					params = []
-					for i in xrange(1, len(self.children)):
-						params.append(self.children[i].evaluate(env, funDict, operatorsDict))
-					return funDict[self.children[0].value](params)
-				else:
-					raise BadInputException("The function " + self.children[0].value + " is undefined")
-			else:
-				raise BadInputException("The first element of list should be a symbol\n")
-		elif self.type == tokenizer.INT:
-			return LispForm(self.type, int(self.value))
-		elif self.type == tokenizer.SYMBOL:
-			if self.value in env:
-				return env[self.value]
-			raise BadInputException("The variable " + self.value + " is unbound")
-		else:
-			return LispForm(self.type, self.value)
-			
-	def getValue(self):
-		res = self.value
-		for ch in self.children:
-			res += " " + str(ch.getValue())
-		if self.type == tokenizer.OPENING_PARENTHESIS:
-			res += " )"
-		return res
-		
 class BadInputException(Exception):
 	def __init__(self, msg):
 		self.msg = msg
+
+class Environment:	
+	def __init__(self, variables, funDict):
+		self.variables = variables
+		self.funDict = funDict
 
 class Interpreter:
 	
@@ -65,18 +33,21 @@ class Interpreter:
 		"-": functions.minus,
 		"*": functions.mul
 	}
-
+	
 	operatorsDict = {
 		"if": special_operators.ifOperator,
 		"let": special_operators.let,
 		"progn": special_operators.progn,
 		"setq" : special_operators.setq,
 		"quote" : special_operators.quote,
+		"'" : special_operators.quote,
 		"list" : special_operators.list,
 		"car" : special_operators.car,
 		"cdr" : special_operators.cdr,
 		"eval" : special_operators.eval,
-		"atom" : special_operators.atom
+		"atom" : special_operators.atom,
+		"`" : special_operators.backquote,
+		"," : special_operators.comma
 	}
 	
 	def tokenizerToInterpreterCons(self, tokenizerCons):
@@ -100,9 +71,9 @@ class Interpreter:
 			if token.tokenId == tokenizer.SYNTAX_ERROR:
 				raise BadInputException("Syntax error")
 			
-			if token.tokenId == tokenizer.QUOTE:
+			if token.tokenId == tokenizer.QUOTE or token.tokenId == tokenizer.BACKQUOTE or token.tokenId == tokenizer.COMMA:
 				newForm = LispForm(LIST, "(")
-				newForm.children.append(LispForm(SYMBOL, "quote"))
+				newForm.children.append(LispForm(SYMBOL, token.value))
 				text = self.readForm(newForm, text, False, 1)[1]
 				parent.children.append(newForm)
 			else:
@@ -127,9 +98,52 @@ class Interpreter:
 			raise BadInputException("Unexpected end of file")
 		return (newForm, text)
 
-	def evalExpr(self, text, env):
+	def evalExpr(self, text, variables):
 		form = self.read(text)
-		return form.evaluate(env, self.funDict, self.operatorsDict)
+		return form.evaluate(Environment(variables, self.funDict))
 			
 	def evalExpression(self, text):
 		return self.evalExpr(text, {"NIL" : LispForm(SYMBOL, "NIL"), "T" : LispForm(SYMBOL, "T")})
+
+
+class LispForm:
+	operatorsDict = Interpreter.operatorsDict
+	def __init__(self, type, value):
+		self.children = []
+		self.type = type
+		self.value = value
+		
+	def evaluate(self, env):
+		if self.type == tokenizer.OPENING_PARENTHESIS:
+			if self.children[0].type == tokenizer.SYMBOL:
+				if self.children[0].value in self.operatorsDict:
+					return self.operatorsDict[self.children[0].value](self.children[1:], Environment(env.variables, env.funDict))
+				elif self.children[0].value in env.funDict:
+					params = []
+					for i in xrange(1, len(self.children)):
+						params.append(self.children[i].evaluate(Environment(env.variables, env.funDict)))
+					return env.funDict[self.children[0].value](params)
+				else:
+					print self.children[0].value
+					raise BadInputException("The function " + self.children[0].value + " is undefined")
+			else:
+				raise BadInputException("The first element of list should be a symbol\n")
+		elif self.type == tokenizer.INT:
+			return LispForm(self.type, int(self.value))
+		elif self.type == tokenizer.SYMBOL:
+			if self.value in env.variables:
+				return env.variables[self.value]
+			raise BadInputException("The variable " + self.value + " is unbound")
+		else:
+			return LispForm(self.type, self.value)
+			
+	def getValue(self):
+		res = self.value
+		for ch in self.children:
+			if self.type == tokenizer.OPENING_PARENTHESIS and ch == self.children[0]:
+				res += str(ch.getValue())
+			else:
+				res += " " + str(ch.getValue())
+		if self.type == tokenizer.OPENING_PARENTHESIS:
+			res += ")"
+		return res
