@@ -79,35 +79,48 @@ class Interpreter:
 		"atom" : special_operators.atom
 	}
 	
+	def tokenizerToInterpreterCons(self, tokenizerCons):
+		if tokenizerCons==tokenizer.INT:
+			return INT
+		
+	
 	def read(self, text):
-		form = LispForm(tokenizer.OPENING_PARENTHESIS, "")
+		form = LispForm(LIST, "")
 		text = self.readForm(form, text, False)[1]
 		if tokenizer.nextToken(text)[0].tokenId != tokenizer.EOF:
 			raise BadInputException("Syntax error")
 		return form.children[0]
 
-	def readForm(self, parent, text, openedParenthesis):
-		print "+++"
-		print text
+	# maximum x means that after loading x element function returns
+	# useful eg. when implementing "'" bevaviour, "'a b" should translate to "(quote a) b". So after loading quote we want load just one element nevertheless there is no ")" in original string
+	# maximum -1 means we want return from readForm onlu if there is EOF or ")" appears in original string
+	def readForm(self, parent, text, openedParenthesis, maximum=-1):
 		(token, text) = tokenizer.nextToken(text)
 		while token.tokenId != tokenizer.EOF:
 			if token.tokenId == tokenizer.SYNTAX_ERROR:
 				raise BadInputException("Syntax error")
 			
-			newForm = LispForm(token.tokenId, token.value)
-			if token.tokenId == tokenizer.OPENING_PARENTHESIS:
-				print "###"
-				print text
-				text = self.readForm(newForm, text, True)[1]
+			if token.tokenId == tokenizer.QUOTE:
+				newForm = LispForm(LIST, "(")
+				newForm.children.append(LispForm(SYMBOL, "quote"))
+				text = self.readForm(newForm, text, False, 1)[1]
 				parent.children.append(newForm)
-			elif token.tokenId == tokenizer.CLOSING_PARENTHESIS:
-				if not(openedParenthesis):
-					raise BadInputException("Unexpected ')'")
-				return (newForm, text)
 			else:
-				parent.children.append(newForm)
+				newForm = LispForm(token.tokenId, token.value)
+				
+				if token.tokenId == tokenizer.OPENING_PARENTHESIS:
+					text = self.readForm(newForm, text, True)[1]
+					parent.children.append(newForm)
+				elif token.tokenId == tokenizer.CLOSING_PARENTHESIS:
+					if not(openedParenthesis):
+						raise BadInputException("Unexpected ')'")
+					return (newForm, text)
+				else:
+					parent.children.append(newForm)
 			
-			print text
+			maximum -= 1
+			if maximum == 0:
+				return (newForm, text)
 			(token, text) = tokenizer.nextToken(text)	
 		
 		if openedParenthesis:
@@ -119,5 +132,4 @@ class Interpreter:
 		return form.evaluate(env, self.funDict, self.operatorsDict)
 			
 	def evalExpression(self, text):
-		print "???" + text
 		return self.evalExpr(text, {"NIL" : LispForm(SYMBOL, "NIL"), "T" : LispForm(SYMBOL, "T")})

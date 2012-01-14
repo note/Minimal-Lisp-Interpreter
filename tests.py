@@ -65,6 +65,18 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual("x", self.interpreter.evalExpression("(let ((x 12)) (quote x))").getValue())
 		self.assertEqual("( x )", self.interpreter.evalExpression("(quote (x))").getValue())
 		
+	def testLiteralQuote(self):
+		self.assertEqual("( + x 5 )", self.interpreter.evalExpression("'(+ x 5)").getValue())
+		self.assertEqual("x", self.interpreter.evalExpression("(let ((x 12)) 'x)").getValue())
+		self.assertEqual("( x )", self.interpreter.evalExpression("'(x)").getValue())
+		
+	def testBackQuote(self):
+		self.assertEqual("( + x 5 )", self.interpreter.evalExpression("`(+ x 5)").getValue())
+		self.assertEqual("x", self.interpreter.evalExpression("(let ((x 12)) `x)").getValue())
+		self.assertEqual("( x )", self.interpreter.evalExpression("`x").getValue())
+		self.assertEqual("( + 4 10 )", self.interpreter.evalExpression("`(+ 4 ,(* 2 5))"))
+		self.assertEqual("( + 4 10 )", self.interpreter.evalExpression("`(+ ,4 ,(* 2 5))"))
+		
 	def testList(self):
 		self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(list (+ x 5))"))
 		self.assertEqual("( 3 4 5 )", self.interpreter.evalExpression("(list 3 4 5)").getValue())

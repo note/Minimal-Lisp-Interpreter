@@ -10,7 +10,8 @@ OPENING_PARENTHESIS = 5
 CLOSING_PARENTHESIS = 6
 SYMBOL = 7
 RATIO = 8
-EOF = 9
+QUOTE = 9
+EOF = 10
 
 class Token:
 	def __init__(self, tokenId, value):
@@ -30,6 +31,7 @@ def patterns():
 	end = "(\\)|[\\s]|\Z)";
 	exp = "[de][0-9]+";
 	
+	# it's important to remember abour proper grouping in all regular expressions
 	p = []
 	p.append(createTokenPattern(OPENING_PARENTHESIS, "^(\()"))
 	p.append(createTokenPattern(CLOSING_PARENTHESIS, "^(\))"))
@@ -43,6 +45,7 @@ def patterns():
 	p.append(createTokenPattern(RATIO, "^(" + integer + ")\/" + unsignedInteger + end))
 	p.append(createTokenPattern(STRING, '^"(.*)"' + end))
 	p.append(createTokenPattern(SYMBOL, "^([^\s\(\)'\"`,:;\\\|]+)" + end))
+	p.append(createTokenPattern(QUOTE, "^(')"))
 	return p
 
 #todo: returning sensible semantic value for float, double and ratio
@@ -55,8 +58,6 @@ def nextToken(text):
 	for (id, p) in patterns():
 		res = p.search(text)
 		if res:
-			if id == INT:
-				return (Token(id, res.group(1)), text[res.end(1):])
 			return (Token(id, res.group(1)), text[res.end(1):])
 			
 	return (Token(SYNTAX_ERROR, None), text)
