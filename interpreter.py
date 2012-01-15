@@ -35,19 +35,19 @@ class Interpreter:
 	}
 	
 	operatorsDict = {
-		"if": special_operators.ifOperator,
-		"let": special_operators.let,
-		"progn": special_operators.progn,
-		"setq" : special_operators.setq,
-		"quote" : special_operators.quote,
-		"'" : special_operators.quote,
-		"list" : special_operators.list,
-		"car" : special_operators.car,
-		"cdr" : special_operators.cdr,
-		"eval" : special_operators.eval,
-		"atom" : special_operators.atom,
-		"`" : special_operators.backquote,
-		"," : special_operators.comma
+		"if": special_operators.IfOperator(),
+		"let": special_operators.Let(),
+		"progn": special_operators.Progn(),
+		"setq" : special_operators.Setq(),
+		"quote" : special_operators.Quote(),
+		"'" : special_operators.Quote(),
+		"list" : special_operators.List(),
+		"car" : special_operators.Car(),
+		"cdr" : special_operators.Cdr(),
+		"eval" : special_operators.Eval(),
+		"atom" : special_operators.Atom(),
+		"`" : special_operators.Backquote(),
+		"," : special_operators.Comma()
 	}
 	
 	def tokenizerToInterpreterCons(self, tokenizerCons):
@@ -113,15 +113,15 @@ class LispForm:
 		self.type = type
 		self.value = value
 		
-	def evaluate(self, env):
+	def evaluate(self, env, **rest):
 		if self.type == tokenizer.OPENING_PARENTHESIS:
 			if self.children[0].type == tokenizer.SYMBOL:
 				if self.children[0].value in self.operatorsDict:
-					return self.operatorsDict[self.children[0].value](self.children[1:], Environment(env.variables, env.funDict))
+					return self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)
 				elif self.children[0].value in env.funDict:
 					params = []
 					for i in xrange(1, len(self.children)):
-						params.append(self.children[i].evaluate(Environment(env.variables, env.funDict)))
+						params.append(self.children[i].evaluate(env, **rest))
 					return env.funDict[self.children[0].value](params)
 				else:
 					print self.children[0].value
@@ -136,7 +136,22 @@ class LispForm:
 			raise BadInputException("The variable " + self.value + " is unbound")
 		else:
 			return LispForm(self.type, self.value)
-			
+		
+	def evaluateIfComma(self, env, **rest):
+		if self.type == tokenizer.SYMBOL and self.value == ",":
+			return self.operatorsDict[self.value].evaluateIfComma(self.children[1:], env, rest)
+		elif self.type == tokenizer.OPENING_PARENTHESIS:
+			if self.children[0].type == tokenizer.SYMBOL and self.children[0].value == ",":
+				return self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)
+			else:
+				res = LispForm(self.type, self.value)
+				for ch in self.children:
+					res.children.append(ch.evaluateIfComma(env, **rest))
+				return res
+		elif self.type == tokenizer.INT or self.type == tokenizer.SYMBOL:
+			return LispForm(self.type, self.value)
+				
+	
 	def getValue(self):
 		res = self.value
 		for ch in self.children:

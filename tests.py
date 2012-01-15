@@ -66,18 +66,19 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual("(x)", self.interpreter.evalExpression("(quote (x))").getValue())
 		self.assertEqual("(quote (x))", self.interpreter.evalExpression("(quote (quote (x)))").getValue())
 		
-	'''def testLiteralQuote(self):
+	def testLiteralQuote(self):
 		self.assertEqual("(+ x 5)", self.interpreter.evalExpression("'(+ x 5)").getValue())
 		self.assertEqual("x", self.interpreter.evalExpression("(let ((x 12)) 'x)").getValue())
 		self.assertEqual("(x)", self.interpreter.evalExpression("'(x)").getValue())
-		self.assertEqual("'(x)", self.interpreter.evalExpression("''(x)").getValue())'''
+		#self.assertEqual("'(x)", self.interpreter.evalExpression("''(x)").getValue())
 		
-	'''def testBackQuote(self):
-		#self.assertEqual("(+ x 5)", self.interpreter.evalExpression("`(+ x 5)").getValue())
-		#self.assertEqual("x", self.interpreter.evalExpression("(let ((x 12)) `x)").getValue())
-		#self.assertEqual("x", self.interpreter.evalExpression("`x").getValue())
+	def testBackQuote(self):
+		self.assertEqual("(+ x 5)", self.interpreter.evalExpression("`(+ x 5)").getValue())
+		self.assertEqual("x", self.interpreter.evalExpression("(let ((x 12)) `x)").getValue())
+		self.assertEqual("x", self.interpreter.evalExpression("`x").getValue())
 		self.assertEqual("(+ 4 10)", self.interpreter.evalExpression("`(+ 4 ,(* 2 5))").getValue())
-		self.assertEqual("(+ (* 3 3) 10)", self.interpreter.evalExpression("`(+ (* 3 3) ,(* 2 5))").getValue())'''
+		self.assertEqual("(+ (* 3 3) 10)", self.interpreter.evalExpression("`(+ (* 3 3) ,(* 2 5))").getValue())
+		self.assertEqual("(* (+ 4 10) 11)", self.interpreter.evalExpression("`(* (+ 4 ,(+ 3 7)) 11)").getValue())
 		
 	def testList(self):
 		self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(list (+ x 5))"))
