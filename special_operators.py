@@ -173,4 +173,4 @@ class Lambda:
 			
 			argNames.append(argName.value)
 		
-		return interpreter.LispForm(interpreter.FUN_OBJ, functions.Function(argNames, params[1]))
+		return interpreter.Function(argNames, params[1])

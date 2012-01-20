@@ -129,6 +129,14 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(9, self.interpreter.evalExpression("((lambda (x) (* x x)) 3)").getValue())
 		self.assertEqual(19, self.interpreter.evalExpression("((lambda (x y) (+ (* 2 x) y)) 4 (+ 4 7))").getValue())
 		self.assertEqual(96, self.interpreter.evalExpression("(let ((x 32)) ((lambda (y) (* x y)) 3))").getValue())
+		self.assertEqual(144, self.interpreter.evalExpression("(let ((x ((lambda (x) (* x x)) 12))) x)").getValue())
+		self.assertEqual(FUN_OBJ, self.interpreter.evalExpression("(lambda (x) x)").getType())
+		self.assertEqual("#<FUNCTION>", self.interpreter.evalExpression("(lambda (x) x)").getValue())
+		self.assertEqual("#<FUNCTION>", self.interpreter.evalExpression("(let ((x (lambda (x y) (* x y)))) x)").getValue())
+		
+	def testDefun(self):
+		self.assertEqual("f", self.interpreter.evalExpression("(defun f (x y z) (* x y (+ 2 z)))").getValue())
+		self.assertEqual("36", self.interpreter.evalExpression("(f 2 3 4)").getValue())
 	
 	''' To test if closures work:
 	(let ((x 0)) (defparameter

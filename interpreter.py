@@ -111,7 +111,7 @@ class Interpreter:
 		return self.evalExpr(text, {"NIL" : LispForm(SYMBOL, "NIL"), "T" : LispForm(SYMBOL, "T")})
 
 
-class LispForm:
+class LispForm(object):
 	operatorsDict = Interpreter.operatorsDict
 	def __init__(self, type, value):
 		self.children = []
@@ -140,7 +140,7 @@ class LispForm:
 				params = []
 				for i in xrange(1, len(self.children)):
 					params.append(self.children[i].evaluate(env, **rest))
-				return firstChild.value.evaluate(params, env)
+				return firstChild.funcall(params, env)
 			else:
 				raise BadInputException("The first element of list should be a symbol\n")
 		elif self.type == tokenizer.INT:
@@ -177,3 +177,28 @@ class LispForm:
 		if self.type == tokenizer.OPENING_PARENTHESIS:
 			res += ")"
 		return res
+		
+	def getType(self):
+		return self.type
+		
+class Function(LispForm):
+	def __init__(self, argNames, body):
+		self.argNames = argNames
+		self.body = body
+		super(Function, self).__init__(FUN_OBJ, "#<FUNCTION>")
+	
+	# It's a huge difference between Function.funcall and Function.evaluate.
+	# Function.funcall is called when lambda is found in context like this: ((lambda (x) x) 3)
+	# The most important thing to notice is two opening parenthesis followed by lambda(the second right after the first). Function.funcall actually call the lambda function.
+	# Function.evaluate is called is called otherwise. It just returns Function objects.
+	def funcall(self, params, env):
+		variables = dict(zip(self.argNames, params))
+		newVariables = dict(env.variables.items() + variables.items()) #order is important - in the case of the same keys the values from variables will be taken
+		newEnv = Environment(newVariables, env.funDict)
+		return self.body.evaluate(newEnv)
+	
+	def evaluate(self, params, **rest):
+		return self
+	
+	def getValue(self):
+		return "#<FUNCTION>"

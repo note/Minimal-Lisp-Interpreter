@@ -2,17 +2,6 @@
 
 import interpreter
 
-class Function:
-	def __init__(self, argNames, body):
-		self.argNames = argNames
-		self.body = body
-	
-	def evaluate(self, params, env):
-		variables = dict(zip(self.argNames, params))
-		newVariables = dict(env.variables.items() + variables.items()) #order is important - in the case of the same keys the values from variables will be taken
-		newEnv = interpreter.Environment(newVariables, env.funDict)
-		return self.body.evaluate(newEnv)
-
 def plus(params):
 	res = 0
 	while len(params):
