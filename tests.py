@@ -116,6 +116,20 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual("NIL", self.interpreter.evalExpression("(atom (quote (4)))").getValue())
 		self.assertEqual("NIL", self.interpreter.evalExpression("(atom (list 5 4))").getValue())
 		
+	def testEq(self):
+		self.assertEqual("T", self.interpreter.evalExpression("(let ((x (list 3 4)) (y (list 3 4))) (eq x y))").getValue())
+		self.assertEqual("NIL", self.interpreter.evalExpression("(let ((x (list 3 4)) (y (list 3))) (eq x y))").getValue())
+		self.assertEqual("NIL", self.interpreter.evalExpression("(eq (list 3 4) (list 3 4))").getValue())
+		self.assertValue("T", self.interpreter.evalExpression("(eq (+ 3 4) (+ 3 4))").getValue())
+		self.assertValue("NIL", self.interpreter.evalExpression("(eq '(+ 3 4) '(+ 3 4))").getValue())
+		self.assertValue("T", self.interpreter.evalExpression("(eq 'fddf 'fddf)").getValue())
+		self.assertValue("NIL", self.interpreter.evalExpression("(eq '(fddf) '(fddf))").getValue())
+		
+	def testLambda(self):
+		self.assertEqual(9, self.interpreter.evalExpression("((lambda (x) (* x x)) 3)").getValue())
+		self.assertEqual(19, self.interpreter.evalExpression("((lambda (x y) (+ (* 2 x) y)) 4 (+ 4 7))").getValue())
+		self.assertEqual(96, self.interpreter.evalExpression("(let ((x 32)) ((lambda (y) (* x y)) 3))").getValue())
+	
 	''' To test if closures work:
 	(let ((x 0)) (defparameter
 	     *fn1* (list 

@@ -15,7 +15,11 @@ LIST = 5 # OPENING_PARENTHESIS and LIST have purposely the same value!
 CLOSING_PARENTHESIS = 6
 SYMBOL = 7
 RATIO = 8
-EOF = 9
+QUOTE = 9
+BACKQUOTE = 10
+COMMA = 11
+EOF = 12
+FUN_OBJ = 13
 		
 class BadInputException(Exception):
 	def __init__(self, msg):
@@ -47,7 +51,8 @@ class Interpreter:
 		"eval" : special_operators.Eval(),
 		"atom" : special_operators.Atom(),
 		"`" : special_operators.Backquote(),
-		"," : special_operators.Comma()
+		"," : special_operators.Comma(),
+		"lambda" : special_operators.Lambda()
 	}
 	
 	def tokenizerToInterpreterCons(self, tokenizerCons):
@@ -115,17 +120,27 @@ class LispForm:
 		
 	def evaluate(self, env, **rest):
 		if self.type == tokenizer.OPENING_PARENTHESIS:
-			if self.children[0].type == tokenizer.SYMBOL:
-				if self.children[0].value in self.operatorsDict:
-					return self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)
-				elif self.children[0].value in env.funDict:
+			if self.children[0].type == tokenizer.OPENING_PARENTHESIS:
+				firstChild = self.children[0].evaluate(env, **rest)
+			else:
+				firstChild = self.children[0]
+				
+			if firstChild.type == tokenizer.SYMBOL:
+				if firstChild.value in self.operatorsDict:
+					return self.operatorsDict[firstChild.value].evaluate(self.children[1:], env, **rest)
+				elif firstChild.value in env.funDict:
 					params = []
 					for i in xrange(1, len(self.children)):
 						params.append(self.children[i].evaluate(env, **rest))
-					return env.funDict[self.children[0].value](params)
+					return env.funDict[firstChild.value](params)
 				else:
-					print self.children[0].value
-					raise BadInputException("The function " + self.children[0].value + " is undefined")
+					print firstChild.value
+					raise BadInputException("The function " + firstChild.value + " is undefined")
+			elif firstChild.type == FUN_OBJ:
+				params = []
+				for i in xrange(1, len(self.children)):
+					params.append(self.children[i].evaluate(env, **rest))
+				return firstChild.value.evaluate(params, env)
 			else:
 				raise BadInputException("The first element of list should be a symbol\n")
 		elif self.type == tokenizer.INT:

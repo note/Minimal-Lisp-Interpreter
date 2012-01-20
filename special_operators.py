@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import interpreter
+import functions
 
 class IfOperator:
 	def evaluate(self, params, env, **rest):
@@ -26,7 +27,7 @@ class Let:
 				raise interpreter.BadInputException("Variable name " + varName.value + " is not a symbol")
 			tmp[varName.value] = value
 			
-		newVariables = dict(env.variables.items() + tmp.items())
+		newVariables = dict(env.variables.items() + tmp.items()) #order is important - in the case of the same keys the values from tmp will be taken
 		newEnv = interpreter.Environment(newVariables, env.funDict)
 		
 		return params[1].evaluate(newEnv)
@@ -129,18 +130,15 @@ class Backquote:
 	def evaluate(self, params, env, **rest):
 		# this should never occur because backquote operator is implicitely added by interpreter. But it still can be useful for debugging purposes
 		if len(params) != 1:
-			raise interpreter.BadInputException("backquote expects " + 1 + " argument (got " + str(len(params)) + " arguments)")
+			raise interpreter.BadInputException("backquote expects " + str(1) + " argument (got " + str(len(params)) + " arguments)")
 		
-		print "BACKQUOTE"
 		if params[0].type != interpreter.LIST:
 			return params[0]
 		else:
 			res = interpreter.LispForm(interpreter.LIST, "(")
-			print "!! Lista"
 			for ch in params[0].children:
 				print ch.getValue()
 			
-			print "////"
 			for ch in params[0].children:
 				res.children.append(ch.evaluateIfComma(env, **rest))
 			return res
@@ -149,7 +147,7 @@ class Comma:
 	def evaluate(self, params, env, **rest):
 		# this should never occur because comma operator is implicitely added by interpreter. But it still can be useful for debugging purposes
 		if len(params) != 1:
-			raise interpreter.BadInputException("comma expects " + 1 + " argument (got " + str(len(params)) + " arguments)")
+			raise interpreter.BadInputException("comma expects " + str(1) + " argument (got " + str(len(params)) + " arguments)")
 		print "here"
 		if "calledByBackquote" in rest:
 			raise interpreter.BadInputeException("comma must occurs inside backquote block")
@@ -159,3 +157,20 @@ class Comma:
 	def evaluateIfComma(self, params, env, **rest):
 		print "EVALUATEIFCOMMA!!!!!"
 		return self.evaluate(params, env, **rest)
+		
+class Lambda:
+	def evaluate(self, params, env, **rest):
+		if len(params) != 2:
+			raise interpreter.BadInputException("lambda expects " + str(2) + " argument (got " + str(len(params)) + " arguments)")
+		
+		if params[0].type != interpreter.LIST:
+			raise interpreter.BadInputException("missing lambda list")
+		
+		argNames = []
+		for argName in params[0].children:
+			if argName.type != interpreter.SYMBOL:
+				raise interpreter.BadInputeException("each element of lambda list is expected to be a symbol")
+			
+			argNames.append(argName.value)
+		
+		return interpreter.LispForm(interpreter.FUN_OBJ, functions.Function(argNames, params[1]))
