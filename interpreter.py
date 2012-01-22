@@ -211,7 +211,23 @@ class LispForm(object):
 		
 class Function(LispForm):
 	def __init__(self, argNames, body, env, name):
+		
+		#searching for &rest
+		self.restPresent = False
+		for i in xrange(len(argNames)):
+			if argNames[i] == "&rest":
+				if i == len(argNames)-2:
+					self.restPresent = True
+					break
+				elif i < len(argNames)-2:
+					raise BadInputException("too many variables are following &rest")
+				else:
+					raise BadInputException("&rest with no rest variable")
+				
 		self.argNames = argNames
+		if self.restPresent:
+			self.argNames[len(self.argNames)-2] = self.argNames[len(self.argNames)-1]
+			self.argNames.pop() # it cannot be done in one line
 		self.body = body
 		self.env = env
 		super(Function, self).__init__(FUN_OBJ, name)
@@ -221,7 +237,16 @@ class Function(LispForm):
 	# The most important thing to notice is two opening parenthesis followed by lambda(the second right after the first). Function.funcall actually call the lambda function.
 	# Function.evaluate is called is called otherwise. It just returns Function objects.
 	def funcall(self, params):
-		variables = dict(zip(self.argNames, params))
+		if self.restPresent:
+			if len(params) < len(self.argNames)-1:
+				raise BadInputException("invalid number of arguments: " + str(len(params)))
+			variables = dict(zip(self.argNames[0:len(self.argNames)-1], params[0:len(self.argNames)-1]))
+			variables[self.argNames[len(self.argNames)-1]] = LispForm(LIST, "(")
+			variables[self.argNames[len(self.argNames)-1]].children = params[len(self.argNames)-1:]
+		else:
+			if len(params) != len(self.argNames):
+				raise BadInputException("invalid number of arguments: " + str(len(params)))
+			variables = dict(zip(self.argNames, params))
 		newVariables = dict(self.env.lexicalEnv.variables.items() + variables.items()) #order is important - in the case of the same keys the values from variables will be taken
 		newEnv = Environment(self.env.globalEnv, Env(newVariables, self.env.lexicalEnv.funDict))
 		return self.body.evaluate(newEnv)

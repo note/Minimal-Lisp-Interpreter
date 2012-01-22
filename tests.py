@@ -146,13 +146,19 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(20, self.interpreter.evalExpression("(let ((a 30)) (h 2))").getValue())
 		self.interpreter.evalExpression("(defun fib (x) (if (= x 0) 1 (* x (fib (- x 1)))))")
 		self.assertEqual(120, self.interpreter.evalExpression("(fib 5)").getValue())
-		#self.interpreter.evalExpression("(defun mymap (l f) (if (car l) (cons (funcall f (car l)) (mymap (cdr l) f))))")
+		self.interpreter.evalExpression("(defun mymap (l f) (if (car l) (cons (funcall f (car l)) (mymap (cdr l) f))))")
 		#self.assertEqual("(2 4 6)", self.interpreter.evalExpression("(mymap '(1 2 3) (lambda (x) (* 2 x)))").getValue())
-		
-	def testFuncall(self):
+	
+	def testRest(self):
+		self.assertEqual("f", self.interpreter.evalExpression("(defun f (x &rest r) ( car (cdr r)))").getValue())
+		self.assertEqual(5, self.interpreter.evalExpression("(f 1 4 5 8 9)").getValue())
+		#self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(def gg (x &rest) x)"))
+		#self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(def gg (x &rest rest abc) x)"))
+	
+	'''def testFuncall(self):
 		self.assertEqual(16, self.interpreter.evalExpression("(let ((fn (lambda (x) (* x x)))) (funcall fn 4))").getValue())
 		self.assertEqual("f", self.interpreter.evalExpression("(defun f (x) (* x x))").getValue())
-		self.assertEqual(9, self.interpreter.evalExpression("(funcall #'f 3)").getValue())
+		self.assertEqual(9, self.interpreter.evalExpression("(funcall #'f 3)").getValue())'''
 		
 	'''Difference between global scope and any other:
 		(let ((a 15)) (progn (defun h(x) (* x a b)) (setf a 10)))
@@ -172,6 +178,8 @@ class TestInterpreter(unittest.TestCase):
 	
 	another interesting test:
 	(let ((sq 12)) (flet ((sq (x) (* x x))) (sq sq)))'''
-
+	'''(defun cons. (el l)
+	      `(list ,el ,@l))'''
+	      
 if __name__ == "__main__":
 	unittest.main()
