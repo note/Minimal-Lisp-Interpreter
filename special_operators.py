@@ -27,8 +27,8 @@ class Let:
 				raise interpreter.BadInputException("Variable name " + varName.value + " is not a symbol")
 			tmp[varName.value] = value
 			
-		newVariables = dict(env.variables.items() + tmp.items()) #order is important - in the case of the same keys the values from tmp will be taken
-		newEnv = interpreter.Environment(newVariables, env.funDict)
+		newVariables = dict(env.lexicalEnv.variables.items() + tmp.items()) #order is important - in the case of the same keys the values from tmp will be taken
+		newEnv = interpreter.Environment(env.globalEnv, interpreter.Env(newVariables, env.lexicalEnv.funDict))
 		
 		return params[1].evaluate(newEnv)
 	
@@ -52,10 +52,10 @@ class Setq:
 			key = params.pop(0)
 			if key.type != interpreter.SYMBOL:
 				raise interpreter.BadInputException("Variable name " + key.value + " is not a symbol")
-			env.variables[key.value] = params.pop(0).evaluate(env)
+			env.lexicalEnv.variables[key.value] = params.pop(0).evaluate(env)
 		
 		if key:
-			return env.variables[key.value]
+			return env.lexicalEnv.variables[key.value]
 		else:
 			return intr.LispForm(interpreter.SYMBOL, "NIL")
 		
@@ -148,7 +148,7 @@ class Comma:
 		# this should never occur because comma operator is implicitely added by interpreter. But it still can be useful for debugging purposes
 		if len(params) != 1:
 			raise interpreter.BadInputException("comma expects " + str(1) + " argument (got " + str(len(params)) + " arguments)")
-		print "here"
+		
 		if "calledByBackquote" in rest:
 			raise interpreter.BadInputeException("comma must occurs inside backquote block")
 		
@@ -161,7 +161,7 @@ class Comma:
 class Lambda:
 	def evaluate(self, params, env, **rest):
 		if len(params) != 2:
-			raise interpreter.BadInputException("lambda expects " + str(2) + " argument (got " + str(len(params)) + " arguments)")
+			raise interpreter.BadInputException("lambda expects " + str(2) + " arguments (got " + str(len(params)) + " arguments)")
 		
 		if params[0].type != interpreter.LIST:
 			raise interpreter.BadInputException("missing lambda list")
@@ -172,5 +172,21 @@ class Lambda:
 				raise interpreter.BadInputeException("each element of lambda list is expected to be a symbol")
 			
 			argNames.append(argName.value)
+		return interpreter.Function(argNames, params[1], env)
 		
-		return interpreter.Function(argNames, params[1])
+class Defun:
+	def evaluate(self, params, env, **rest):
+		if len(params) != 3:
+			raise interpreter.BadInputException("defun expects " + str(3) + " arguments (got " + str(len(params)) + " arguments)")
+		
+		if params[0].type != interpreter.SYMBOL:
+			raise interpreter.BadInputeException("first element of defun is expected to be a symbol")
+		
+		env.globalEnv.funDict[params[0].value] = Lambda().evaluate(params[1:], env, **rest) # making copy is undesirable because defun change the global environment
+		
+		return interpreter.LispForm(interpreter.SYMBOL, params[0].value)
+		
+class Hash:
+	def evaluate(self, params, env, **rest):
+		pass
+		

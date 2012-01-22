@@ -2,23 +2,26 @@
 
 import interpreter
 
-def plus(params):
-	res = 0
-	while len(params):
-		res += params.pop(0).value
-	return interpreter.LispForm(interpreter.INT, res)
+class Plus:
+	def funcall(self, params):
+		res = 0
+		while len(params):
+			res += params.pop(0).value
+		return interpreter.LispForm(interpreter.INT, res)
 
-def minus(params):
-	if len(params) == 0:
-		raise interpreter.BadInputException("Invalid number of arguments: 0")
+class Minus:
+	def funcall(self, params):
+		if len(params) == 0:
+			raise interpreter.BadInputException("Invalid number of arguments: 0")
+		
+		res = params.pop(0).value
+		while len(params):
+			res -= params.pop(0).value
+		return interpreter.LispForm(interpreter.INT, res)
 	
-	res = params.pop(0).value
-	while len(params):
-		res -= params.pop(0).value
-	return interpreter.LispForm(interpreter.INT, res)
-	
-def mul(params):
-	res = 1
-	while len(params):
-		res *= params.pop().value
-	return interpreter.LispForm(interpreter.INT, res)
+class Mul:
+	def funcall(self, params):
+		res = 1
+		while len(params):
+			res *= params.pop().value
+		return interpreter.LispForm(interpreter.INT, res)

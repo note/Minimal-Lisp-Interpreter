@@ -13,7 +13,8 @@ RATIO = 8
 QUOTE = 9
 BACKQUOTE = 10
 COMMA = 11
-EOF = 12
+HASH = 12
+EOF = 13
 
 class Token:
 	def __init__(self, tokenId, value):
@@ -49,7 +50,8 @@ def patterns():
 	p.append(createTokenPattern(SYMBOL, "^([^\s\(\)'\"`,:;\\\|]+)" + end))
 	p.append(createTokenPattern(QUOTE, "^(')"))
 	p.append(createTokenPattern(BACKQUOTE, "^(`)"))
-	p.append(createTokenPattern(BACKQUOTE, "^(,)"))
+	p.append(createTokenPattern(COMMA, "^(,)"))
+	p.append(createTokenPattern(HASH, "^(#)"))
 	return p
 
 #todo: returning sensible semantic value for float, double and ratio

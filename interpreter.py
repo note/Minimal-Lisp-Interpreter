@@ -18,24 +18,43 @@ RATIO = 8
 QUOTE = 9
 BACKQUOTE = 10
 COMMA = 11
-EOF = 12
-FUN_OBJ = 13
+HASH = 12
+EOF = 13
+
+FUN_OBJ = 30
 		
 class BadInputException(Exception):
 	def __init__(self, msg):
 		self.msg = msg
 
-class Environment:	
+class Env:	
 	def __init__(self, variables, funDict):
 		self.variables = variables
 		self.funDict = funDict
 
+class Environment:
+	def __init__(self, globalEnv, lexicalEnv):
+		self.globalEnv = globalEnv
+		self.lexicalEnv = lexicalEnv
+		
+	def getVariable(self, varName):
+		val = self.lexicalEnv.variables.get(varName)
+		if val:
+			return val
+		return self.globalEnv.variables.get(varName)
+		
+	def getFunction(self, fnName):
+		val = self.lexicalEnv.funDict.get(fnName)
+		if val:
+			return val
+		return self.globalEnv.funDict.get(fnName)
+
 class Interpreter:
 	
 	funDict = {
-		"+": functions.plus,
-		"-": functions.minus,
-		"*": functions.mul
+		"+": functions.Plus(),
+		"-": functions.Minus(),
+		"*": functions.Mul()
 	}
 	
 	operatorsDict = {
@@ -52,7 +71,9 @@ class Interpreter:
 		"atom" : special_operators.Atom(),
 		"`" : special_operators.Backquote(),
 		"," : special_operators.Comma(),
-		"lambda" : special_operators.Lambda()
+		"lambda" : special_operators.Lambda(),
+		"defun" : special_operators.Defun(),
+		"#" : special_operators.Hash() 
 	}
 	
 	def tokenizerToInterpreterCons(self, tokenizerCons):
@@ -76,7 +97,7 @@ class Interpreter:
 			if token.tokenId == tokenizer.SYNTAX_ERROR:
 				raise BadInputException("Syntax error")
 			
-			if token.tokenId == tokenizer.QUOTE or token.tokenId == tokenizer.BACKQUOTE or token.tokenId == tokenizer.COMMA:
+			if token.tokenId == tokenizer.QUOTE or token.tokenId == tokenizer.BACKQUOTE or token.tokenId == tokenizer.COMMA or token.tokenId == tokenizer.HASH:
 				newForm = LispForm(LIST, "(")
 				newForm.children.append(LispForm(SYMBOL, token.value))
 				text = self.readForm(newForm, text, False, 1)[1]
@@ -105,7 +126,7 @@ class Interpreter:
 
 	def evalExpr(self, text, variables):
 		form = self.read(text)
-		return form.evaluate(Environment(variables, self.funDict))
+		return form.evaluate(Environment(Env(variables, self.funDict), Env({}, {})))
 			
 	def evalExpression(self, text):
 		return self.evalExpr(text, {"NIL" : LispForm(SYMBOL, "NIL"), "T" : LispForm(SYMBOL, "T")})
@@ -128,26 +149,31 @@ class LispForm(object):
 			if firstChild.type == tokenizer.SYMBOL:
 				if firstChild.value in self.operatorsDict:
 					return self.operatorsDict[firstChild.value].evaluate(self.children[1:], env, **rest)
-				elif firstChild.value in env.funDict:
-					params = []
-					for i in xrange(1, len(self.children)):
-						params.append(self.children[i].evaluate(env, **rest))
-					return env.funDict[firstChild.value](params)
 				else:
-					print firstChild.value
-					raise BadInputException("The function " + firstChild.value + " is undefined")
+					fun = env.getFunction(firstChild.value)
+					if fun:
+						params = []
+						for i in xrange(1, len(self.children)):
+							params.append(self.children[i].evaluate(env, **rest))
+						return fun.funcall(params)
+					else:
+						print firstChild.value
+						raise BadInputException("The function " + firstChild.value + " is undefined")
 			elif firstChild.type == FUN_OBJ:
 				params = []
 				for i in xrange(1, len(self.children)):
 					params.append(self.children[i].evaluate(env, **rest))
-				return firstChild.funcall(params, env)
+				return firstChild.funcall(params)
 			else:
 				raise BadInputException("The first element of list should be a symbol\n")
 		elif self.type == tokenizer.INT:
 			return LispForm(self.type, int(self.value))
 		elif self.type == tokenizer.SYMBOL:
-			if self.value in env.variables:
-				return env.variables[self.value]
+			val = env.getVariable(self.value)
+			if val:
+				return val
+			print "+++++WARNING"
+			print self.value
 			raise BadInputException("The variable " + self.value + " is unbound")
 		else:
 			return LispForm(self.type, self.value)
@@ -182,19 +208,20 @@ class LispForm(object):
 		return self.type
 		
 class Function(LispForm):
-	def __init__(self, argNames, body):
+	def __init__(self, argNames, body, env):
 		self.argNames = argNames
 		self.body = body
+		self.env = env
 		super(Function, self).__init__(FUN_OBJ, "#<FUNCTION>")
 	
 	# It's a huge difference between Function.funcall and Function.evaluate.
 	# Function.funcall is called when lambda is found in context like this: ((lambda (x) x) 3)
 	# The most important thing to notice is two opening parenthesis followed by lambda(the second right after the first). Function.funcall actually call the lambda function.
 	# Function.evaluate is called is called otherwise. It just returns Function objects.
-	def funcall(self, params, env):
+	def funcall(self, params):
 		variables = dict(zip(self.argNames, params))
-		newVariables = dict(env.variables.items() + variables.items()) #order is important - in the case of the same keys the values from variables will be taken
-		newEnv = Environment(newVariables, env.funDict)
+		newVariables = dict(self.env.lexicalEnv.variables.items() + variables.items()) #order is important - in the case of the same keys the values from variables will be taken
+		newEnv = Environment(self.env.globalEnv, Env(newVariables, self.env.lexicalEnv.funDict))
 		return self.body.evaluate(newEnv)
 	
 	def evaluate(self, params, **rest):
