@@ -25,3 +25,10 @@ class Mul:
 		while len(params):
 			res *= params.pop().value
 		return interpreter.LispForm(interpreter.INT, res)
+		
+class Equal:
+	def funcall(self, params):
+		for param in params:
+			if param.value != params[0].value:
+				return interpreter.LispForm(interpreter.SYMBOL, "NIL")
+		return interpreter.LispForm(interpreter.SYMBOL, "T")

@@ -29,7 +29,7 @@ def createTokenPattern(id, regex):
 	return (id, re.compile(regex))
 
 def patterns():
-	unsignedInteger = "[1-9][0-9]*";
+	unsignedInteger = "[1-9]*[0-9]";
 	integer = "[\+-]?" + unsignedInteger;
 	end = "(\\)|[\\s]|\Z)";
 	exp = "[de][0-9]+";

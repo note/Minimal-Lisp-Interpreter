@@ -129,21 +129,31 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(9, self.interpreter.evalExpression("((lambda (x) (* x x)) 3)").getValue())
 		self.assertEqual(19, self.interpreter.evalExpression("((lambda (x y) (+ (* 2 x) y)) 4 (+ 4 7))").getValue())
 		self.assertEqual(96, self.interpreter.evalExpression("(let ((x 32)) ((lambda (y) (* x y)) 3))").getValue())
-		self.assertEqual(144, self.interpreter.evalExpression("(let ((y ((lambda (z) (* z z)) 12))) y)").getValue())
+		self.assertEqual(144, self.interpreter.evalExpression("(let ((x ((lambda (x) (* x x)) 12))) x)").getValue())
 		self.assertEqual(FUN_OBJ, self.interpreter.evalExpression("(lambda (x) x)").getType())
-		self.assertEqual("#<FUNCTION>", self.interpreter.evalExpression("(lambda (x) x)").getValue())
-		self.assertEqual("#<FUNCTION>", self.interpreter.evalExpression("(let ((x (lambda (x y) (* x y)))) x)").getValue())
+		self.assertEqual("#<FUNCTION LAMBDA>", self.interpreter.evalExpression("(lambda (x) x)").getValue())
+		self.assertEqual("#<FUNCTION LAMBDA>", self.interpreter.evalExpression("(let ((x (lambda (x y) (* x y)))) x)").getValue())
 		
 	def testDefun(self):
 		self.assertEqual("f", self.interpreter.evalExpression("(defun f (x y z) (* x y (+ 2 z)))").getValue())
 		self.assertEqual(36, self.interpreter.evalExpression("(f 2 3 4)").getValue())
-		#self.assertEqual(FUN_OBJ, self.interpreter.evalExpression("#'f").getType())
-		#self.assertEqual("#<FUNCTION>", self.interpreter.evalExpression("#'f").getValue())
+		self.assertEqual(FUN_OBJ, self.interpreter.evalExpression("#'f").getType())
+		self.assertEqual("#<FUNCTION f>", self.interpreter.evalExpression("#'f").getValue())
 		self.assertEqual("g", self.interpreter.evalExpression("(let ((a 15)) (defun g (x) (* x a)))").getValue())
 		self.assertEqual(30, self.interpreter.evalExpression("(g 2)").getValue())
 		self.assertEqual(10, self.interpreter.evalExpression("(let ((a 15)) (progn (defun h (x) (* x a)) (setq a 10)))").getValue())
 		self.assertEqual(20, self.interpreter.evalExpression("(h 2)").getValue())
-	
+		self.assertEqual(20, self.interpreter.evalExpression("(let ((a 30)) (h 2))").getValue())
+		self.interpreter.evalExpression("(defun fib (x) (if (= x 0) 1 (* x (fib (- x 1)))))")
+		self.assertEqual(120, self.interpreter.evalExpression("(fib 5)").getValue())
+		#self.interpreter.evalExpression("(defun mymap (l f) (if (car l) (cons (funcall f (car l)) (mymap (cdr l) f))))")
+		#self.assertEqual("(2 4 6)", self.interpreter.evalExpression("(mymap '(1 2 3) (lambda (x) (* 2 x)))").getValue())
+		
+	def testFuncall(self):
+		self.assertEqual(16, self.interpreter.evalExpression("(let ((fn (lambda (x) (* x x)))) (funcall fn 4))").getValue())
+		self.assertEqual("f", self.interpreter.evalExpression("(defun f (x) (* x x))").getValue())
+		self.assertEqual(9, self.interpreter.evalExpression("(funcall #'f 3)").getValue())
+		
 	'''Difference between global scope and any other:
 		(let ((a 15)) (progn (defun h(x) (* x a b)) (setf a 10)))
 		(let ((b 13)) (h 2)) - does not work

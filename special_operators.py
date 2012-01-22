@@ -150,7 +150,7 @@ class Comma:
 			raise interpreter.BadInputException("comma expects " + str(1) + " argument (got " + str(len(params)) + " arguments)")
 		
 		if "calledByBackquote" in rest:
-			raise interpreter.BadInputeException("comma must occurs inside backquote block")
+			raise interpreter.BadInputException("comma must occurs inside backquote block")
 		
 		return params[0].evaluate(env)
 		
@@ -159,7 +159,7 @@ class Comma:
 		return self.evaluate(params, env, **rest)
 		
 class Lambda:
-	def evaluate(self, params, env, **rest):
+	def evaluate(self, params, env, fnName="#<FUNCTION LAMBDA>"):
 		if len(params) != 2:
 			raise interpreter.BadInputException("lambda expects " + str(2) + " arguments (got " + str(len(params)) + " arguments)")
 		
@@ -169,24 +169,55 @@ class Lambda:
 		argNames = []
 		for argName in params[0].children:
 			if argName.type != interpreter.SYMBOL:
-				raise interpreter.BadInputeException("each element of lambda list is expected to be a symbol")
+				raise interpreter.BadInputException("each element of lambda list is expected to be a symbol")
 			
 			argNames.append(argName.value)
-		return interpreter.Function(argNames, params[1], env)
+		return interpreter.Function(argNames, params[1], env, fnName)
 		
 class Defun:
-	def evaluate(self, params, env, **rest):
+	def evaluate(self, params, env):
 		if len(params) != 3:
 			raise interpreter.BadInputException("defun expects " + str(3) + " arguments (got " + str(len(params)) + " arguments)")
 		
 		if params[0].type != interpreter.SYMBOL:
-			raise interpreter.BadInputeException("first element of defun is expected to be a symbol")
+			raise interpreter.BadInputException("first element of defun is expected to be a symbol")
 		
-		env.globalEnv.funDict[params[0].value] = Lambda().evaluate(params[1:], env, **rest) # making copy is undesirable because defun change the global environment
+		env.globalEnv.funDict[params[0].value] = Lambda().evaluate(params[1:], env, "#<FUNCTION " + params[0].value + ">") # making copy is undesirable because defun change the global environment
 		
 		return interpreter.LispForm(interpreter.SYMBOL, params[0].value)
 		
 class Hash:
 	def evaluate(self, params, env, **rest):
-		pass
+		if len(params) != 1:
+			raise interpreter.BadInputException("# expects " + str(1) + " argument (got " + str(len(params)) + " arguments)")
 		
+		tmp = params[0].evaluate(env)
+		if tmp.type != interpreter.SYMBOL:
+			raise interpreter.BadInputException("first parameter of # should evaluate to function name")
+		
+		fn = env.getFunction(tmp.value)
+		if not(fn):
+			raise interpreter.BadInputException("first parameter of # should evaluate to function name")
+		return fn.evaluate(env)
+
+class Funcall:
+	def evaluate(self, params, env, **rest):
+		if len(params) < 1:
+			raise interpreter.BadInputException("funcall expects at least one parameter")
+				
+		if params[0].type != interpreter.SYMBOL:
+			fn = params[0].evaluate(env)
+			if fn.type != interpreter.FUN_OBJ:
+				raise interpreter.BadInputException("first parameter of funcall should evaluate to function")
+		else:
+			fn = env.getVariable(params[0].value)
+			if not(fn):
+				fn = env.getFunction(params[0].value)
+				if not(fn):
+					raise interpreter.BadInputException("cannot find function " + params[0].value)
+	
+		args = []
+		for param in params[1:]:
+			args.append(param.evaluate(env))
+			
+		return fn.funcall(args)

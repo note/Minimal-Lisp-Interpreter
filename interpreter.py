@@ -54,7 +54,8 @@ class Interpreter:
 	funDict = {
 		"+": functions.Plus(),
 		"-": functions.Minus(),
-		"*": functions.Mul()
+		"*": functions.Mul(),
+		"=": functions.Equal()
 	}
 	
 	operatorsDict = {
@@ -73,7 +74,8 @@ class Interpreter:
 		"," : special_operators.Comma(),
 		"lambda" : special_operators.Lambda(),
 		"defun" : special_operators.Defun(),
-		"#" : special_operators.Hash() 
+		"#" : special_operators.Hash(),
+		"funcall" : special_operators.Funcall()
 	}
 	
 	def tokenizerToInterpreterCons(self, tokenizerCons):
@@ -208,11 +210,11 @@ class LispForm(object):
 		return self.type
 		
 class Function(LispForm):
-	def __init__(self, argNames, body, env):
+	def __init__(self, argNames, body, env, name):
 		self.argNames = argNames
 		self.body = body
 		self.env = env
-		super(Function, self).__init__(FUN_OBJ, "#<FUNCTION>")
+		super(Function, self).__init__(FUN_OBJ, name)
 	
 	# It's a huge difference between Function.funcall and Function.evaluate.
 	# Function.funcall is called when lambda is found in context like this: ((lambda (x) x) 3)
@@ -228,4 +230,4 @@ class Function(LispForm):
 		return self
 	
 	def getValue(self):
-		return "#<FUNCTION>"
+		return self.value
