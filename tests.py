@@ -7,8 +7,11 @@ from interpreter import *
 class TestInterpreter(unittest.TestCase):
 	def setUp(self):
 		self.interpreter = Interpreter()
+		
+	def doTest(self, expectedValue, inputStr):
+		self.assertEqual(expectedValue, self.interpreter.evalExpression(inputStr).getValue())
 	
-	'''def testNextToken(self):
+	def testNextToken(self):
 		self.assertEqual(tokenizer.EOF, nextToken("")[0].tokenId)
 		self.assertEqual(tokenizer.INT, nextToken("44")[0].tokenId)
 		self.assertEqual(tokenizer.INT, nextToken("	44")[0].tokenId)
@@ -36,7 +39,7 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(5, self.interpreter.evalExpression("(+ 2 3) (+ 2932 434)").getValue())
 		self.assertEqual(36, self.interpreter.evalExpression("(* 6 (+ 2 3 1))").getValue())
 		self.assertRaises(BadInputException, self.interpreter.evalExpression, (")"))
-		self.assertEqual("NIL", self.interpreter.evalExpression("()").getValue())
+		self.doTest("NIL", "()")
 		
 	def testEval(self):
 		self.assertEqual(9, self.interpreter.evalExpression("(eval '(+ 4 5))").getValue())
@@ -47,14 +50,14 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(11, self.interpreter.evalExpression("(if (- 4 3) 11 10)").getValue())
 		self.assertEqual(10, self.interpreter.evalExpression("(if NIL 11 10)").getValue())
 		
-		self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(if T)"))'''
+		self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(if T)"))
 
 	def testLet(self):
 		self.assertEqual(5, self.interpreter.evalExpression("(let ((x 5)) x)").getValue())
 		self.assertEqual(20, self.interpreter.evalExpression("(let ((x (* 2 (+ 5 5)))) x)").getValue())
 		self.assertEqual(6, self.interpreter.evalExpression("(let ((x 2) (y 4)) (+ x y))").getValue())
 		self.assertEqual(14, self.interpreter.evalExpression("(let ((x 10)) (let ((y 4)) (+ x y)))").getValue())
-		self.assertEqual(20, self.intereter.evalExpression("(let ((w 4)) (setq w 5) (* w 4))").getValue())
+		self.assertEqual(20, self.interpreter.evalExpression("(let ((w 4)) (setq w 5) (* w 4))").getValue())
 		
 	def testProgn(self):
 		self.assertEqual(5, self.interpreter.evalExpression("(progn 3 5)").getValue())
@@ -66,59 +69,63 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(2, self.interpreter.evalExpression("(let ((x 2)) (progn (let ((x 3)) (setq x 4)) x))").getValue())
 		self.assertEqual(12, self.interpreter.evalExpression("(let ((x 2) (y 6)) (progn (setq x 4 y 8) (+ x y)))").getValue())
 		
-	'''def testQuote(self):
-		self.assertEqual("(+ x 5)", self.interpreter.evalExpression("(quote (+ x 5))").getValue())
-		self.assertEqual("x", self.interpreter.evalExpression("(let ((x 12)) (quote x))").getValue())
-		self.assertEqual("(x)", self.interpreter.evalExpression("(quote (x))").getValue())
-		self.assertEqual("(quote (x))", self.interpreter.evalExpression("(quote (quote (x)))").getValue())
+	def testQuote(self):
+		self.doTest("(+ x 5)", "(quote (+ x 5))")
+		self.doTest("x", "(let ((x 12)) (quote x))")
+		self.doTest("(x)", "(quote (x))")
+		self.doTest("(quote (x))", "(quote (quote (x)))")
 		
 	def testLiteralQuote(self):
-		self.assertEqual("(+ x 5)", self.interpreter.evalExpression("'(+ x 5)").getValue())
-		self.assertEqual("x", self.interpreter.evalExpression("(let ((x 12)) 'x)").getValue())
-		self.assertEqual("(x)", self.interpreter.evalExpression("'(x)").getValue())
-		#self.assertEqual("'(x)", self.interpreter.evalExpression("''(x)").getValue())
+		self.doTest("(+ x 5)", "'(+ x 5)")
+		self.doTest("x", "(let ((x 12)) 'x)")
+		self.doTest("(x)", "'(x)")
+		#self.doTest("'(x)", "''(x)")
 		
 	def testBackQuote(self):
-		self.assertEqual("(+ x 5)", self.interpreter.evalExpression("`(+ x 5)").getValue())
-		self.assertEqual("x", self.interpreter.evalExpression("(let ((x 12)) `x)").getValue())
-		self.assertEqual("x", self.interpreter.evalExpression("`x").getValue())
-		self.assertEqual("(+ 4 10)", self.interpreter.evalExpression("`(+ 4 ,(* 2 5))").getValue())
-		self.assertEqual("(+ (* 3 3) 10)", self.interpreter.evalExpression("`(+ (* 3 3) ,(* 2 5))").getValue())
-		self.assertEqual("(* (+ 4 10) 11)", self.interpreter.evalExpression("`(* (+ 4 ,(+ 3 7)) 11)").getValue())
-		self.assertEqual("(3 4 (7 8))", self.interpreter.evalExpression("`(3 4 ,(list 7 8))").getValue())
-		self.assertEqual("(3 4 7 8)", self.interpreter.evalExpression("`(3 4 ,@(list 7 8))").getValue())'''
+		self.doTest("(+ x 5)", "`(+ x 5)")
+		self.doTest("x", "(let ((x 12)) `x)")
+		self.doTest("x", "`x")
+		self.doTest("(+ 4 10)", "`(+ 4 ,(* 2 5))")
+		self.doTest("(+ (* 3 3) 10)", "`(+ (* 3 3) ,(* 2 5))")
+		self.doTest("(* (+ 4 10) 11)", "`(* (+ 4 ,(+ 3 7)) 11)")
+		self.doTest("(3 4 (7 8))", "`(3 4 ,(list 7 8))")
+		self.doTest("(3 4 7 8)", "`(3 4 ,@(list 7 8))")
 	
 	def testCons(self):
-		self.assertEqual("(5 3 4)", self.interpreter.evalExpression("(cons 5 '(3 4))").getValue())
-		self.assertEqual("(1 2 3)", self.interpreter.evalExpression("(cons 1 (cons 2 (cons 3 ())))").getValue())
-		self.assertEqual("(5 3 4)", self.interpreter.evalExpression("(cons (+ 2 3) '(3 4))").getValue())
-		self.assertEqual("(22)", self.interpreter.evalExpression("(cons 22 NIL)").getValue())
-		self.assertEqual("(22)", self.interpreter.evalExpression("(let ((x ())) (cons 22 x))").getValue())
+		self.doTest("(5 3 4)", "(cons 5 '(3 4))")
+		self.doTest("(1 2 3)", "(cons 1 (cons 2 (cons 3 ())))")
+		self.doTest("(5 3 4)", "(cons (+ 2 3) '(3 4))")
+		self.doTest("(22)", "(cons 22 NIL)")
+		self.doTest("(22)", "(let ((x ())) (cons 22 x))")
 	
 	def testList(self):
-		self.interpreter.evalExpression("(defun list (&rest rest) (let ((x NIL)) (progn (defun list2 (&rest rest) (if (car rest) (setq x (cons (car rest) x)) NIL)) (progn (list2 rest) (car x)))))")
-		self.assertEqual("f", self.interpreter.evalExpression("(defun f (&rest r) (if (car r) 1 0))").getValue())
-		self.assertEqual(0, self.interpreter.evalExpression("(eval '(f))").getValue())
-		#self.interpreter.evalExpression("(defun list (&rest rest) (if (car rest) (cons (car rest) (eval `(list ,@(cdr rest)))) NIL ))")
+		self.interpreter.evalExpression("(defun list (&rest rest) (let ((x NIL)) (defun list2 (&rest rest) (if (car rest) (setq x (cons (car rest) x)) NIL)) (progn (list2 rest) (car x))))")
+		self.interpreter.evalExpression("(defun last (l) (if (cdr l) (last (cdr l)) (car l)))")
+		self.assertEqual(6, self.interpreter.evalExpression("(last '(3 4 6))").getValue())
 		self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(list (+ x 5))"))
-		self.assertEqual("(3 4 5)", self.interpreter.evalExpression("(list 3 4 5)").getValue())
-		self.assertEqual("(1 2 3)", self.interpreter.evalExpression("(let ((x 2)) (list 1 x 3))").getValue())
-		self.assertEqual("(10 20 (30 40))", self.interpreter.evalExpression("(list 10 20 (list 30 40))").getValue())
-		#self.assertEqual("NIL", self.interpreter.evalExpression("(list)").getValue())
-		#self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(list))"))
+		self.doTest("(3 4 5)", "(list 3 4 5)")
 		
-	'''def testCar(self):
-		self.assertEqual("+", self.interpreter.evalExpression("(car (quote (+ 2 4)))").getValue())
-		self.assertEqual(5, self.interpreter.evalExpression("(car (list 5 6))").getValue())
-		self.assertEqual(5, self.interpreter.evalExpression("(car (list (+ 1 4) 6))").getValue())
-		self.assertEqual("(5 6)", self.interpreter.evalExpression("(car (list (list 5 6) 9 10))").getValue())
+		self.doTest("(1 2 3)", "(let ((x 2)) (list 1 x 3))")
+		self.doTest("(10 20 (30 40))", "(list 10 20 (list 30 40))")
+		self.doTest("NIL", "(list)")
+		self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(list))"))
+		
+	def testCar(self):
+		self.doTest("NIL", "(car ())")
+		self.doTest("NIL", "(car NIL)")
+		self.assertEqual(5, self.interpreter.evalExpression("(car (cons 5 ()))").getValue())
+		self.assertEqual(8, self.interpreter.evalExpression("(car (quote (8 2 4)))").getValue())
+		#self.doTest("+", "(car (quote (+ 2 4)))")
+		#self.assertEqual(5, self.interpreter.evalExpression("(car (list 5 6))").getValue())
+		#self.assertEqual(5, self.interpreter.evalExpression("(car (list (+ 1 4) 6))").getValue())
+		#self.doTest("(5 6)", "(car (list (list 5 6) 9 10))")
 		
 	def testCdr(self):
-		self.assertEqual("(2 4)", self.interpreter.evalExpression("(cdr (quote (+ 2 4)))").getValue())
-		self.assertEqual("NIL", self.interpreter.evalExpression("(cdr (list 2))").getValue())
-		self.assertEqual("NIL", self.interpreter.evalExpression("(cdr (list))").getValue())
-		self.assertEqual("((* 3 4))", self.interpreter.evalExpression("(cdr (quote (2 (* 3 4))))").getValue())
-		self.assertEqual("(6)", self.interpreter.evalExpression("(cdr (list 5 6))").getValue())
+		self.doTest("(2 4)", "(cdr (quote (+ 2 4)))")
+		self.doTest("NIL", "(cdr (list 2))")
+		self.doTest("NIL", "(cdr (list))")
+		self.doTest("((* 3 4))", "(cdr (quote (2 (* 3 4))))")
+		self.doTest("(6)", "(cdr (list 5 6))")
 		self.assertEqual(6, self.interpreter.evalExpression("(car (cdr (list 5 6 9 10)))").getValue())
 		
 	def testEval(self):
@@ -126,19 +133,19 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(5, self.interpreter.evalExpression("(eval `(+ 3 2))").getValue())
 		
 	def testAtom(self):
-		self.assertEqual("T", self.interpreter.evalExpression("(atom (+ 4 3))").getValue())
-		self.assertEqual("T", self.interpreter.evalExpression("(atom (quote 43))").getValue())
-		self.assertEqual("T", self.interpreter.evalExpression("(atom (quote ()))").getValue())
-		self.assertEqual("T", self.interpreter.evalExpression("(atom (quote +))").getValue())
-		self.assertEqual("NIL", self.interpreter.evalExpression("(atom (quote (+)))").getValue())
-		self.assertEqual("NIL", self.interpreter.evalExpression("(atom (quote (+ 4 5)))").getValue())
-		self.assertEqual("NIL", self.interpreter.evalExpression("(atom (quote (4)))").getValue())
-		self.assertEqual("NIL", self.interpreter.evalExpression("(atom (list 5 4))").getValue())
+		self.doTest("T", "(atom (+ 4 3))")
+		self.doTest("T", "(atom (quote 43))")
+		self.doTest("T", "(atom (quote ()))")
+		self.doTest("T", "(atom (quote +))")
+		self.doTest("NIL", "(atom (quote (+)))")
+		self.doTest("NIL", "(atom (quote (+ 4 5)))")
+		self.doTest("NIL", "(atom (quote (4)))")
+		self.doTest("NIL", "(atom (list 5 4))")
 		
 	def testEq(self):
-		self.assertEqual("T", self.interpreter.evalExpression("(let ((x (list 3 4)) (y (list 3 4))) (eq x y))").getValue())
-		self.assertEqual("NIL", self.interpreter.evalExpression("(let ((x (list 3 4)) (y (list 3))) (eq x y))").getValue())
-		self.assertEqual("NIL", self.interpreter.evalExpression("(eq (list 3 4) (list 3 4))").getValue())
+		self.doTest("T", "(let ((x (list 3 4)) (y (list 3 4))) (eq x y))")
+		self.doTest("NIL", "(let ((x (list 3 4)) (y (list 3))) (eq x y))")
+		self.doTest("NIL", "(eq (list 3 4) (list 3 4))")
 		self.assertValue("T", self.interpreter.evalExpression("(eq (+ 3 4) (+ 3 4))").getValue())
 		self.assertValue("NIL", self.interpreter.evalExpression("(eq '(+ 3 4) '(+ 3 4))").getValue())
 		self.assertValue("T", self.interpreter.evalExpression("(eq 'fddf 'fddf)").getValue())
@@ -150,15 +157,15 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(96, self.interpreter.evalExpression("(let ((x 32)) ((lambda (y) (* x y)) 3))").getValue())
 		self.assertEqual(144, self.interpreter.evalExpression("(let ((x ((lambda (x) (* x x)) 12))) x)").getValue())
 		self.assertEqual(FUN_OBJ, self.interpreter.evalExpression("(lambda (x) x)").getType())
-		self.assertEqual("#<FUNCTION LAMBDA>", self.interpreter.evalExpression("(lambda (x) x)").getValue())
-		self.assertEqual("#<FUNCTION LAMBDA>", self.interpreter.evalExpression("(let ((x (lambda (x y) (* x y)))) x)").getValue())
+		self.doTest("#<FUNCTION LAMBDA>", "(lambda (x) x)")
+		self.doTest("#<FUNCTION LAMBDA>", "(let ((x (lambda (x y) (* x y)))) x)")
 		
 	def testDefun(self):
-		self.assertEqual("f", self.interpreter.evalExpression("(defun f (x y z) (* x y (+ 2 z)))").getValue())
+		self.doTest("f", "(defun f (x y z) (* x y (+ 2 z)))")
 		self.assertEqual(36, self.interpreter.evalExpression("(f 2 3 4)").getValue())
 		self.assertEqual(FUN_OBJ, self.interpreter.evalExpression("#'f").getType())
-		self.assertEqual("#<FUNCTION f>", self.interpreter.evalExpression("#'f").getValue())
-		self.assertEqual("g", self.interpreter.evalExpression("(let ((a 15)) (defun g (x) (* x a)))").getValue())
+		self.doTest("#<FUNCTION f>", "#'f")
+		self.doTest("g", "(let ((a 15)) (defun g (x) (* x a)))")
 		self.assertEqual(30, self.interpreter.evalExpression("(g 2)").getValue())
 		self.assertEqual(10, self.interpreter.evalExpression("(let ((a 15)) (progn (defun h (x) (* x a)) (setq a 10)))").getValue())
 		self.assertEqual(20, self.interpreter.evalExpression("(h 2)").getValue())
@@ -166,18 +173,18 @@ class TestInterpreter(unittest.TestCase):
 		self.interpreter.evalExpression("(defun fib (x) (if (= x 0) 1 (* x (fib (- x 1)))))")
 		self.assertEqual(120, self.interpreter.evalExpression("(fib 5)").getValue())
 		self.interpreter.evalExpression("(defun mymap (l f) (if (car l) (cons (funcall f (car l)) (mymap (cdr l) f))))")
-		#self.assertEqual("(2 4 6)", self.interpreter.evalExpression("(mymap '(1 2 3) (lambda (x) (* 2 x)))").getValue())
+		#self.doTest("(2 4 6)", "(mymap '(1 2 3) (lambda (x) (* 2 x)))")
 	
 	def testRest(self):
-		self.assertEqual("f", self.interpreter.evalExpression("(defun f (x &rest r) ( car (cdr r)))").getValue())
+		self.doTest("f", "(defun f (x &rest r) ( car (cdr r)))")
 		self.assertEqual(5, self.interpreter.evalExpression("(f 1 4 5 8 9)").getValue())
 		#self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(def gg (x &rest) x)"))
-		#self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(def gg (x &rest rest abc) x)"))'''
+		#self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(def gg (x &rest rest abc) x)"))
 	
-	'''def testFuncall(self):
+	def testFuncall(self):
 		self.assertEqual(16, self.interpreter.evalExpression("(let ((fn (lambda (x) (* x x)))) (funcall fn 4))").getValue())
-		self.assertEqual("f", self.interpreter.evalExpression("(defun f (x) (* x x))").getValue())
-		self.assertEqual(9, self.interpreter.evalExpression("(funcall #'f 3)").getValue())'''
+		self.doTest("f", "(defun f (x) (* x x))")
+		self.assertEqual(9, self.interpreter.evalExpression("(funcall #'f 3)").getValue())
 		
 	'''Difference between global scope and any other:
 		(let ((a 15)) (progn (defun h(x) (* x a b)) (setf a 10)))

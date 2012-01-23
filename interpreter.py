@@ -49,6 +49,12 @@ class Environment:
 		if val:
 			return val
 		return self.globalEnv.funDict.get(fnName)
+		
+def getNil():
+	return LispForm(SYMBOL, "NIL")
+	
+def getEmptyList():
+	return LispForm(LIST, "(")
 
 class Interpreter:
 	
@@ -118,6 +124,9 @@ class Interpreter:
 					if not(openedParenthesis):
 						raise BadInputException("Unexpected ')'")
 					return (newForm, text)
+				elif token.tokenId == tokenizer.INT:
+					newForm.value = int(newForm.value)
+					parent.children.append(newForm)
 				else:
 					parent.children.append(newForm)
 			
@@ -135,8 +144,7 @@ class Interpreter:
 		return form.evaluate(Environment(Env(variables, self.funDict), Env({}, {})))
 			
 	def evalExpression(self, text):
-		return self.evalExpr(text, {"NIL" : LispForm(SYMBOL, "NIL"), "T" : LispForm(SYMBOL, "T")})
-
+		return self.evalExpr(text, {"NIL" : getNil(), "T" : LispForm(SYMBOL, "T")})
 
 class LispForm(object):
 	operatorsDict = Interpreter.operatorsDict
@@ -148,7 +156,7 @@ class LispForm(object):
 	def evaluate(self, env, **rest):
 		if self.type == tokenizer.OPENING_PARENTHESIS:
 			if len(self.children) == 0:
-				return LispForm(SYMBOL, "NIL")
+				return getNil()
 			if self.children[0].type == tokenizer.OPENING_PARENTHESIS:
 				firstChild = self.children[0].evaluate(env, **rest)
 			else:
@@ -236,6 +244,9 @@ class LispForm(object):
 		
 	def getType(self):
 		return self.type
+		
+	def isNil(self):
+		return (self.type == SYMBOL and self.value == "NIL") or (self.type == LIST and len(self.children) == 0)
 		
 class Function(LispForm):
 	def __init__(self, argNames, body, env, name):

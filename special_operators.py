@@ -15,6 +15,9 @@ class IfOperator:
 		
 class Let:
 	def evaluate(self, params, env, **rest):
+		if len(params) < 1:
+			raise interpreter.BadInputException("let expects at least one argument (got " + str(len(params)) + " arguments)")
+		
 		tmp = {}
 		for initExpr in params[0].children:
 			if len(initExpr.children) > 0:
@@ -22,7 +25,7 @@ class Let:
 				value = initExpr.children[1].evaluate(env)
 			else:
 				varName = initExpr
-				value = interpreter.LispForm(interpreter.SYMBOL, "NIL")
+				value = interpreter.getNil()
 			if varName.type != interpreter.SYMBOL:
 				raise interpreter.BadInputException("Variable name " + varName.value + " is not a symbol")
 			tmp[varName.value] = value
@@ -30,7 +33,10 @@ class Let:
 		newVariables = dict(env.lexicalEnv.variables.items() + tmp.items()) #order is important - in the case of the same keys the values from tmp will be taken
 		newEnv = interpreter.Environment(env.globalEnv, interpreter.Env(newVariables, env.lexicalEnv.funDict))
 		
-		return params[1].evaluate(newEnv)
+		res = interpreter.getNil()
+		for param in params[1:]:
+			res = param.evaluate(newEnv)
+		return res
 	
 class Progn:
 	def evaluate(self, params, env, **rest):
@@ -40,7 +46,7 @@ class Progn:
 		if len(params)>0:
 			return params.pop(0).evaluate(env)
 		else:
-			return interpreter.LispForm(interpreter.SYMBOL, "NIL")
+			return interpreter.getNil()
 		
 class Setq:
 	def evaluate(self, params, env, **rest):
@@ -57,7 +63,7 @@ class Setq:
 		if key:
 			return env.lexicalEnv.variables[key.value]
 		else:
-			return intr.LispForm(interpreter.SYMBOL, "NIL")
+			return intr.getNil()
 		
 class Quote:
 	def evaluate(self, params, env, **rest):
@@ -79,8 +85,8 @@ class Cons:
 			raise interpreter.BadInputException("cons expects 2 arguments (got " + str(len(params)) + " arguments)")
 		
 		res = params[1].evaluate(env)
-		if res.type == interpreter.SYMBOL and res.value == "NIL":
-			res = interpreter.LispForm(interpreter.LIST, "(")
+		if res.isNil():
+			res = interpreter.getEmptyList()
 			
 		if res.type != interpreter.LIST:
 			raise interpreter.BadInputException("second parameter of cons is expected to be a list")
@@ -96,11 +102,14 @@ class Car:
 		
 		res = params[0].evaluate(env)
 		
+		if res.isNil():
+			res = interpreter.getEmptyList()
+		
 		if res.type != interpreter.LIST: 
 			raise interpreter.BadInputException("The value " + str(res.value) + " is not a list")
 		
 		if len(res.children) == 0:
-			return interpreter.LispForm(interpreter.SYMBOL, "NIL")
+			return interpreter.getNil()
 		return res.children[0]
 	
 class Cdr:
@@ -114,7 +123,7 @@ class Cdr:
 			raise interpreter.BadInputException("The value " + str(res.value) + " is not a list")
 		
 		if len(res.children) < 2:
-			return interpreter.LispForm(interpreter.SYMBOL, "NIL")
+			return interpreter.getNil()
 			
 		form = interpreter.LispForm(interpreter.LIST, "(")
 		form.children = res.children[1:]
@@ -138,7 +147,7 @@ class Atom:
 			if len(res.children) == 0:
 				return interpreter.LispForm(interpreter.SYMBOL, "T")
 			else:
-				return interpreter.LispForm(interpreter.SYMBOL, "NIL")
+				return interpreter.getNil()
 				
 		return interpreter.LispForm(interpreter.SYMBOL, "T")
 	

@@ -30,5 +30,5 @@ class Equal:
 	def funcall(self, params):
 		for param in params:
 			if param.value != params[0].value:
-				return interpreter.LispForm(interpreter.SYMBOL, "NIL")
+				return interpreter.getNil()
 		return interpreter.LispForm(interpreter.SYMBOL, "T")
