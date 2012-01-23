@@ -17,9 +17,10 @@ SYMBOL = 7
 RATIO = 8
 QUOTE = 9
 BACKQUOTE = 10
-COMMA = 11
-HASH = 12
-EOF = 13
+COMMA_AT = 11
+COMMA = 12
+HASH = 13
+EOF = 14
 
 FUN_OBJ = 30
 		
@@ -65,17 +66,20 @@ class Interpreter:
 		"setq" : special_operators.Setq(),
 		"quote" : special_operators.Quote(),
 		"'" : special_operators.Quote(),
-		"list" : special_operators.List(),
+		#"list" : special_operators.List(),
 		"car" : special_operators.Car(),
 		"cdr" : special_operators.Cdr(),
 		"eval" : special_operators.Eval(),
 		"atom" : special_operators.Atom(),
 		"`" : special_operators.Backquote(),
 		"," : special_operators.Comma(),
+		",@" : special_operators.Comma(),
 		"lambda" : special_operators.Lambda(),
 		"defun" : special_operators.Defun(),
 		"#" : special_operators.Hash(),
-		"funcall" : special_operators.Funcall()
+		"funcall" : special_operators.Funcall(),
+		"cons" : special_operators.Cons(),
+		"eval" : special_operators.Eval()
 	}
 	
 	def tokenizerToInterpreterCons(self, tokenizerCons):
@@ -99,7 +103,7 @@ class Interpreter:
 			if token.tokenId == tokenizer.SYNTAX_ERROR:
 				raise BadInputException("Syntax error")
 			
-			if token.tokenId == tokenizer.QUOTE or token.tokenId == tokenizer.BACKQUOTE or token.tokenId == tokenizer.COMMA or token.tokenId == tokenizer.HASH:
+			if token.tokenId == tokenizer.QUOTE or token.tokenId == tokenizer.BACKQUOTE or token.tokenId == tokenizer.COMMA or token.tokenId == tokenizer.HASH or token.tokenId == COMMA_AT:
 				newForm = LispForm(LIST, "(")
 				newForm.children.append(LispForm(SYMBOL, token.value))
 				text = self.readForm(newForm, text, False, 1)[1]
@@ -143,6 +147,8 @@ class LispForm(object):
 		
 	def evaluate(self, env, **rest):
 		if self.type == tokenizer.OPENING_PARENTHESIS:
+			if len(self.children) == 0:
+				return LispForm(SYMBOL, "NIL")
 			if self.children[0].type == tokenizer.OPENING_PARENTHESIS:
 				firstChild = self.children[0].evaluate(env, **rest)
 			else:
@@ -180,19 +186,41 @@ class LispForm(object):
 		else:
 			return LispForm(self.type, self.value)
 		
+	'''def evaluateIfComma(self, env, **rest):
+		if self.type == tokenizer.SYMBOL and (self.value == "," or self.value == ",@"):
+			return [self.operatorsDict[self.value].evaluateIfComma(self.children[1:], env, **rest)]
+		elif self.type == tokenizer.OPENING_PARENTHESIS:
+			if self.children[0].type == tokenizer.SYMBOL and self.value == ",":
+				return [self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)]
+			elif self.children[0].type == tokenizer.SYMBOL and self.value == ",@":
+				res = self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)
+				if res.type != tokenizer.LIST:
+					raise BadInputException("argument following ,@ must evaluate to list")
+				return res.children
+			else:
+				[res] = [LispForm(self.type, self.value)]
+				for ch in self.children:
+					res.children[len(res.children):] = (ch.evaluateIfComma(env, **rest))
+				return [res]
+		elif self.type == tokenizer.INT or self.type == tokenizer.SYMBOL:
+			return [LispForm(self.type, self.value)]'''
+			
 	def evaluateIfComma(self, env, **rest):
-		if self.type == tokenizer.SYMBOL and self.value == ",":
-			return self.operatorsDict[self.value].evaluateIfComma(self.children[1:], env, rest)
+		if self.type == tokenizer.SYMBOL and (self.value == "," or self.value == ",@"):
+			return [self.operatorsDict[self.value].evaluateIfComma(self.children[1:], env, **rest)]
 		elif self.type == tokenizer.OPENING_PARENTHESIS:
 			if self.children[0].type == tokenizer.SYMBOL and self.children[0].value == ",":
-				return self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)
+				return [self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)]
+			elif self.children[0].type == tokenizer.SYMBOL and self.children[0].value == ",@":
+				res = self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)
+				return res.children
 			else:
 				res = LispForm(self.type, self.value)
 				for ch in self.children:
-					res.children.append(ch.evaluateIfComma(env, **rest))
-				return res
+					res.children[len(res.children):] = (ch.evaluateIfComma(env, **rest))
+				return [res]
 		elif self.type == tokenizer.INT or self.type == tokenizer.SYMBOL:
-			return LispForm(self.type, self.value)
+			return [LispForm(self.type, self.value)]
 				
 	
 	def getValue(self):

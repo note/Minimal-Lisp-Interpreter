@@ -12,9 +12,10 @@ SYMBOL = 7
 RATIO = 8
 QUOTE = 9
 BACKQUOTE = 10
-COMMA = 11
-HASH = 12
-EOF = 13
+COMMA_AT = 11
+COMMA = 12
+HASH = 13
+EOF = 14
 
 class Token:
 	def __init__(self, tokenId, value):
@@ -50,6 +51,7 @@ def patterns():
 	p.append(createTokenPattern(SYMBOL, "^([^\s\(\)'\"`,:;\\\|]+)" + end))
 	p.append(createTokenPattern(QUOTE, "^(')"))
 	p.append(createTokenPattern(BACKQUOTE, "^(`)"))
+	p.append(createTokenPattern(COMMA_AT, "^(,@)"))
 	p.append(createTokenPattern(COMMA, "^(,)"))
 	p.append(createTokenPattern(HASH, "^(#)"))
 	return p

@@ -72,6 +72,22 @@ class List:
 		for param in params:
 			form.children.append(param.evaluate(env))
 		return form
+		
+class Cons:
+	def evaluate(self, params, env, **rest):
+		if len(params) != 2:
+			raise interpreter.BadInputException("cons expects 2 arguments (got " + str(len(params)) + " arguments)")
+		
+		res = params[1].evaluate(env)
+		if res.type == interpreter.SYMBOL and res.value == "NIL":
+			res = interpreter.LispForm(interpreter.LIST, "(")
+			
+		if res.type != interpreter.LIST:
+			raise interpreter.BadInputException("second parameter of cons is expected to be a list")
+		
+		res.children.insert(0, params[0].evaluate(env))
+		return res
+		
 	
 class Car:
 	def evaluate(self, params, env, **rest):
@@ -136,11 +152,9 @@ class Backquote:
 			return params[0]
 		else:
 			res = interpreter.LispForm(interpreter.LIST, "(")
-			for ch in params[0].children:
-				print ch.getValue()
 			
 			for ch in params[0].children:
-				res.children.append(ch.evaluateIfComma(env, **rest))
+				res.children[len(res.children):] = ch.evaluateIfComma(env, **rest)
 			return res
 		
 class Comma:
@@ -155,7 +169,6 @@ class Comma:
 		return params[0].evaluate(env)
 		
 	def evaluateIfComma(self, params, env, **rest):
-		print "EVALUATEIFCOMMA!!!!!"
 		return self.evaluate(params, env, **rest)
 		
 class Lambda:
@@ -221,3 +234,13 @@ class Funcall:
 			args.append(param.evaluate(env))
 			
 		return fn.funcall(args)
+		
+class Eval:
+	def evaluate(self, params, env, **rest):
+		if len(params) != 1:
+			raise interpreter.BadInputException("eval expect one argument (got " + str(len(params)) + " arguments)")
+		
+		tmp = params[0].evaluate(env)
+		print "EVAL"
+		print tmp.getValue()
+		return tmp.evaluate(env)
