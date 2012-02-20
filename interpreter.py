@@ -51,10 +51,10 @@ class Environment:
 		return self.globalEnv.funDict.get(fnName)
 		
 def getNil():
-	return LispForm(SYMBOL, "NIL")
+	return Symbol("NIL")
 	
 def getEmptyList():
-	return LispForm(LIST, "(")
+	return List()
 
 class Interpreter:
 	
@@ -85,7 +85,8 @@ class Interpreter:
 		"#" : special_operators.Hash(),
 		"funcall" : special_operators.Funcall(),
 		"cons" : special_operators.Cons(),
-		"eval" : special_operators.Eval()
+		"eval" : special_operators.Eval(),
+		"defmacro" : special_operators.Defmacro()
 	}
 	
 	def tokenizerToInterpreterCons(self, tokenizerCons):
@@ -94,7 +95,7 @@ class Interpreter:
 		
 	
 	def read(self, text):
-		form = LispForm(LIST, "")
+		form = List()
 		text = self.readForm(form, text, False)[1]
 		if tokenizer.nextToken(text)[0].tokenId != tokenizer.EOF:
 			raise BadInputException("Syntax error")
@@ -110,12 +111,12 @@ class Interpreter:
 				raise BadInputException("Syntax error")
 			
 			if token.tokenId == tokenizer.QUOTE or token.tokenId == tokenizer.BACKQUOTE or token.tokenId == tokenizer.COMMA or token.tokenId == tokenizer.HASH or token.tokenId == COMMA_AT:
-				newForm = LispForm(LIST, "(")
-				newForm.children.append(LispForm(SYMBOL, token.value))
+				newForm = List()
+				newForm.children.append(Symbol(token.value))
 				text = self.readForm(newForm, text, False, 1)[1]
 				parent.children.append(newForm)
 			else:
-				newForm = LispForm(token.tokenId, token.value)
+				newForm = LispForm.createLispForm(token.tokenId, token.value)
 				
 				if token.tokenId == tokenizer.OPENING_PARENTHESIS:
 					text = self.readForm(newForm, text, True)[1]
@@ -144,111 +145,161 @@ class Interpreter:
 		return form.evaluate(Environment(Env(variables, self.funDict), Env({}, {})))
 			
 	def evalExpression(self, text):
-		return self.evalExpr(text, {"NIL" : getNil(), "T" : LispForm(SYMBOL, "T")})
+		return self.evalExpr(text, {"NIL" : getNil(), "T" : Symbol("T")})
 
 class LispForm(object):
 	operatorsDict = Interpreter.operatorsDict
-	def __init__(self, type, value):
+	def __init__(self, value):
 		self.children = []
-		self.type = type
 		self.value = value
 		
-	def evaluate(self, env, **rest):
-		if self.type == tokenizer.OPENING_PARENTHESIS:
-			if len(self.children) == 0:
-				return getNil()
-			if self.children[0].type == tokenizer.OPENING_PARENTHESIS:
-				firstChild = self.children[0].evaluate(env, **rest)
-			else:
-				firstChild = self.children[0]
-				
-			if firstChild.type == tokenizer.SYMBOL:
-				if firstChild.value in self.operatorsDict:
-					return self.operatorsDict[firstChild.value].evaluate(self.children[1:], env, **rest)
-				else:
-					fun = env.getFunction(firstChild.value)
-					if fun:
-						params = []
-						for i in xrange(1, len(self.children)):
-							params.append(self.children[i].evaluate(env, **rest))
-						return fun.funcall(params)
-					else:
-						print firstChild.value
-						raise BadInputException("The function " + firstChild.value + " is undefined")
-			elif firstChild.type == FUN_OBJ:
-				params = []
-				for i in xrange(1, len(self.children)):
-					params.append(self.children[i].evaluate(env, **rest))
-				return firstChild.funcall(params)
-			else:
-				raise BadInputException("The first element of list should be a symbol\n")
-		elif self.type == tokenizer.INT:
-			return LispForm(self.type, int(self.value))
-		elif self.type == tokenizer.SYMBOL:
-			val = env.getVariable(self.value)
-			if val:
-				return val
-			print "+++++WARNING"
-			print self.value
-			raise BadInputException("The variable " + self.value + " is unbound")
-		else:
-			return LispForm(self.type, self.value)
+	@staticmethod
+	def createLispForm(type, value):
+		if type == SYMBOL:
+			return Symbol(value)
+		elif type == LIST:
+			return List()
+		elif type == INT:
+			return Number(value)
+		elif type == STRING:
+			return String(value)
 		
-	'''def evaluateIfComma(self, env, **rest):
-		if self.type == tokenizer.SYMBOL and (self.value == "," or self.value == ",@"):
-			return [self.operatorsDict[self.value].evaluateIfComma(self.children[1:], env, **rest)]
-		elif self.type == tokenizer.OPENING_PARENTHESIS:
-			if self.children[0].type == tokenizer.SYMBOL and self.value == ",":
-				return [self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)]
-			elif self.children[0].type == tokenizer.SYMBOL and self.value == ",@":
-				res = self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)
-				if res.type != tokenizer.LIST:
-					raise BadInputException("argument following ,@ must evaluate to list")
-				return res.children
-			else:
-				[res] = [LispForm(self.type, self.value)]
-				for ch in self.children:
-					res.children[len(res.children):] = (ch.evaluateIfComma(env, **rest))
-				return [res]
-		elif self.type == tokenizer.INT or self.type == tokenizer.SYMBOL:
-			return [LispForm(self.type, self.value)]'''
+	def evaluate(self, env, **rest):
+		return LispForm(self.value)
 			
 	def evaluateIfComma(self, env, **rest):
-		if self.type == tokenizer.SYMBOL and (self.value == "," or self.value == ",@"):
-			return [self.operatorsDict[self.value].evaluateIfComma(self.children[1:], env, **rest)]
-		elif self.type == tokenizer.OPENING_PARENTHESIS:
-			if self.children[0].type == tokenizer.SYMBOL and self.children[0].value == ",":
-				return [self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)]
-			elif self.children[0].type == tokenizer.SYMBOL and self.children[0].value == ",@":
-				res = self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)
-				return res.children
-			else:
-				res = LispForm(self.type, self.value)
-				for ch in self.children:
-					res.children[len(res.children):] = (ch.evaluateIfComma(env, **rest))
-				return [res]
-		elif self.type == tokenizer.INT or self.type == tokenizer.SYMBOL:
-			return [LispForm(self.type, self.value)]
-				
+		return [LispForm(self.value)]
 	
 	def getValue(self):
+		return self.value
+		
+	def call(self, params, env, **rest):
+		raise BadInputException("The first element of list should be a symbol\n")
+		
+	def isNil(self):
+		# all cases when it's true are implemented in children classes
+		return False
+	
+def evaluateParams(params, env, **rest):
+	evaluated = []
+	for param in params:
+		evaluated.append(param.evaluate(env, **rest))
+	return evaluated
+		
+class List(LispForm):
+	def __init__(self):
+		super(List, self).__init__("(")
+	
+	def evaluate(self, env, **rest):
+		if len(self.children) == 0:
+			return getNil()
+			
+		if self.children[0].getType() == tokenizer.OPENING_PARENTHESIS:
+			firstChild = self.children[0].evaluate(env, **rest)
+		else:
+			firstChild = self.children[0]
+
+		if firstChild.getType() == tokenizer.SYMBOL:
+			if firstChild.value in self.operatorsDict:
+				return self.operatorsDict[firstChild.value].evaluate(self.children[1:], env, **rest)
+			else:
+				fun = env.getFunction(firstChild.value)
+				if fun:
+					return fun.funcall(evaluateParams(self.children[1:], env, **rest))
+				else:
+					print firstChild.value
+					raise BadInputException("The function " + firstChild.value + " is undefined")
+		elif firstChild.getType() == FUN_OBJ:
+			return firstChild.funcall(evaluateParams(self.children[1:], env, **rest))
+		else:
+			raise BadInputException("The first element of list should be a symbol\n")
+			
+	def evaluateIfComma(self, env, **rest):
+		print "list.evaluateIfComma"
+		if self.children[0].getType() == tokenizer.SYMBOL and self.children[0].value == ",":
+			return [self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)]
+		elif self.children[0].getType() == tokenizer.SYMBOL and self.children[0].value == ",@":
+			res = self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)
+			return res.children
+		else:
+			res = List()
+			for ch in self.children:
+				res.children[len(res.children):] = (ch.evaluateIfComma(env, **rest))
+			return [res]
+			
+	def getValue(self):
+		if len(self.children) == 0:
+			return "NIL"
+		
 		res = self.value
 		for ch in self.children:
-			if self.type == tokenizer.OPENING_PARENTHESIS and ch == self.children[0]:
+			if ch == self.children[0]:
 				res += str(ch.getValue())
 			else:
 				res += " " + str(ch.getValue())
-		if self.type == tokenizer.OPENING_PARENTHESIS:
-			res += ")"
+				
+		res += ")"
 		return res
+	
+	def isNil(self):
+		return len(self.children) == 0
 		
 	def getType(self):
-		return self.type
+		return LIST
+	
+class Number(LispForm):
+	def __init__(self, value):
+		super(Number, self).__init__(value)
+	
+	def evaluate(self, env, **rest):
+		return Number(self.value)
+	
+	def evaluateIfComma(self, env, **rest):
+		return [Number(self.value)]
 		
+	def getType(self):
+		return INT
+	
+class String(LispForm):
+	def __init__(self, value):
+		super(String, self).__init__(value)
+	
+	def evaluate(self, env, **rest):
+		return String(self.value)
+	
+	def evaluateIfComma(self, env, **rest):
+		return [String(self.value)]
+		
+	def getType(self):
+		return STRING
+		
+class Symbol(LispForm):
+	def evaluate(self, env, **rest):
+		val = env.getVariable(self.value)
+		if val:
+			return val
+		
+		raise BadInputException("The variable " + self.value + " is unbound")
+		
+	def evaluateIfComma(self, env, **rest):
+		if self.value == "," or self.value == ",@":
+			return [self.operatorsDict[self.value].evaluateIfComma(self.children[1:], env, **rest)]
+		return [Symbol(self.value)]
+	
 	def isNil(self):
-		return (self.type == SYMBOL and self.value == "NIL") or (self.type == LIST and len(self.children) == 0)
+		return self.value == "NIL"
+	
+	def getType(self):
+		return SYMBOL
+
+class Callable(LispForm):
+	def __init__(self, name):
+		super(Callable, self).__init__(name)
 		
-class Function(LispForm):
+	def funcall(self, params):
+		raise NotImplementedError( "Should have implemented this" )
+		
+class Function(Callable):
 	def __init__(self, argNames, body, env, name):
 		
 		#searching for &rest
@@ -269,7 +320,10 @@ class Function(LispForm):
 			self.argNames.pop() # it cannot be done in one line
 		self.body = body
 		self.env = env
-		super(Function, self).__init__(FUN_OBJ, name)
+		super(Function, self).__init__(name)
+		
+	def call(self, env, params, **rest):
+		return self.funcall(params)
 	
 	# It's a huge difference between Function.funcall and Function.evaluate.
 	# Function.funcall is called when lambda is found in context like this: ((lambda (x) x) 3)
@@ -280,7 +334,7 @@ class Function(LispForm):
 			if len(params) < len(self.argNames)-1:
 				raise BadInputException("invalid number of arguments: " + str(len(params)))
 			variables = dict(zip(self.argNames[0:len(self.argNames)-1], params[0:len(self.argNames)-1]))
-			variables[self.argNames[len(self.argNames)-1]] = LispForm(LIST, "(")
+			variables[self.argNames[len(self.argNames)-1]] = List()
 			variables[self.argNames[len(self.argNames)-1]].children = params[len(self.argNames)-1:]
 		else:
 			if len(params) != len(self.argNames):
@@ -295,3 +349,7 @@ class Function(LispForm):
 	
 	def getValue(self):
 		return self.value
+	
+	def getType(self):
+		return FUN_OBJ
+	

@@ -7,7 +7,7 @@ class Plus:
 		res = 0
 		while len(params):
 			res += params.pop(0).value
-		return interpreter.LispForm(interpreter.INT, res)
+		return interpreter.Number(res)
 
 class Minus:
 	def funcall(self, params):
@@ -17,18 +17,18 @@ class Minus:
 		res = params.pop(0).value
 		while len(params):
 			res -= params.pop(0).value
-		return interpreter.LispForm(interpreter.INT, res)
+		return interpreter.Number(res)
 	
 class Mul:
 	def funcall(self, params):
 		res = 1
 		while len(params):
 			res *= params.pop().value
-		return interpreter.LispForm(interpreter.INT, res)
+		return interpreter.Number(res)
 		
 class Equal:
 	def funcall(self, params):
 		for param in params:
 			if param.value != params[0].value:
 				return interpreter.getNil()
-		return interpreter.LispForm(interpreter.SYMBOL, "T")
+		return interpreter.Number("T")
