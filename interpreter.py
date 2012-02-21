@@ -29,7 +29,7 @@ class Interpreter:
 		text = self.readForm(form, text, False)[1]
 		if tokenizer.nextToken(text)[0].tokenId != tokenizer.EOF:
 			raise BadInputException("Syntax error")
-		return form.children[0]
+		return form.children
 
 	# maximum x means that after loading x element function returns
 	# useful eg. when implementing "'" bevaviour, "'a b" should translate to "(quote a) b". So after loading quote we want load just one element nevertheless there is no ")" in original string
@@ -72,7 +72,8 @@ class Interpreter:
 
 	def evalExpr(self, text, variables):
 		form = self.read(text)
-		return form.evaluate(Environment(Env(variables, self.funDict), Env({}, {})))
+		topLevelForm = special_operators.Progn()
+		return topLevelForm.evaluate(form, Environment(Env(variables, self.funDict), Env({}, {})))
 			
 	def evalExpression(self, text):
 		return self.evalExpr(text, {"NIL" : getNil(), "T" : Symbol("T")})

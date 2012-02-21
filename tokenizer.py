@@ -39,6 +39,7 @@ def patterns():
 	p.append(createTokenPattern(COMMA_AT, "^(,@)"))
 	p.append(createTokenPattern(COMMA, "^(,)"))
 	p.append(createTokenPattern(HASH, "^(#)"))
+	p.append(createTokenPattern(COMMENT, "^(;)"))
 	return p
 
 #todo: returning sensible semantic value for float, double and ratio
@@ -51,6 +52,9 @@ def nextToken(text):
 	for (id, p) in patterns():
 		res = p.search(text)
 		if res:
+			if id == COMMENT:
+				text = re.sub('(([^\n]*\n)|([^\n]*$))', '', text, 1)
+				return nextToken(text)
 			return (Token(id, res.group(1)), text[res.end(1):])
 			
 	return (Token(SYNTAX_ERROR, None), text)

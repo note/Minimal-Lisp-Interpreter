@@ -36,10 +36,18 @@ class TestInterpreter(unittest.TestCase):
 		
 	def testEvalExpresssion(self):
 		self.assertEqual(5, self.interpreter.evalExpression("(+ 2 3)").getValue())
-		self.assertEqual(5, self.interpreter.evalExpression("(+ 2 3) (+ 2932 434)").getValue())
-		self.assertEqual(36, self.interpreter.evalExpression("(* 6 (+ 2 3 1))").getValue())
-		self.assertRaises(BadInputException, self.interpreter.evalExpression, (")"))
+		self.assertEqual(13, self.interpreter.evalExpression("(+ 2 3) (+ 5 8)").getValue())
+		self.assertEqual(36, self.interpreter.evalExpression("(* 6 (+ 2 3 1))  ").getValue())
+		self.doTest(12, "(+ 2 3) 	 (* 3 4)")
+		self.assertRaises(BadInputException, self.interpreter.evalExpression, ")")
 		self.doTest("NIL", "()")
+		
+	def testComments(self):
+		self.assertRaises(BadInputException, self.interpreter.evalExpression, "(+ 3 4) )")
+		self.doTest(7, "(+ 3 4) ;; )")
+		self.doTest(14, """(+ 3 5) ;; ( 44
+				(* 3 2)
+				(+ 6 8) ; (* 7 12)""")
 		
 	def testEval(self):
 		self.doTest(9, "(eval '(+ 4 5))")
@@ -195,6 +203,9 @@ class TestInterpreter(unittest.TestCase):
 		# condition is not satisfied - no side effects which means that parameters wasn't evaluated
 		self.doTest(33, "(let ((x 33)) (progn (when. (= x 34) (setq x (+ x 10)) (setq x (+ x 10))) x))")
 		
+		''' (let ((rev (lambda (l res) (if (car l) (rr (cdr l) (cons (car l) res)) res))))
+	   (defun reverse. (l)
+	     (funcall rev l (list)))) '''
 		#self.doTest("backwards", "(defmacro backwards (code) (reverse code))")
 		#self.doTest(5, "(backwards (3 2 +))")
 		
