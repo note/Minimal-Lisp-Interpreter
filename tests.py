@@ -187,9 +187,16 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(6, self.interpreter.evalExpression("(last '(3 4 6))").getValue())
 		
 	def testDefmacro(self):
-		self.doTest("when", "(defmacro when (test &rest forms) `(if ,test (progn ,@forms)))")
-		print "start!!!"
-		self.doTest(53, "(let ((x 33)) (when (= x 33) (setq x (+ x 10)) (setq x (+ x 10))))")
+		self.doTest("when.", "(defmacro when. (test &rest forms) `(if ,test (progn ,@forms)))")
+		
+		# condition is satisfied - we can see that there was some side effects
+		self.doTest(53, "(let ((x 33)) (progn (when. (= x 33) (setq x (+ x 10)) (setq x (+ x 10))) x))")
+		
+		# condition is not satisfied - no side effects which means that parameters wasn't evaluated
+		self.doTest(33, "(let ((x 33)) (progn (when. (= x 34) (setq x (+ x 10)) (setq x (+ x 10))) x))")
+		
+		#self.doTest("backwards", "(defmacro backwards (code) (reverse code))")
+		#self.doTest(5, "(backwards (3 2 +))")
 		
 	def testRest(self):
 		self.doTest("f", "(defun f (x &rest r) ( car (cdr r)))")

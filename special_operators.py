@@ -234,7 +234,7 @@ class Defmacro:
 				raise BadInputException("each element of lambda list is expected to be a symbol")
 			argNames.append(argName.value)
 		
-		env.globalEnv.funDict[params[0].value] = Macro(argNames, params[2], env, params[0].value) # making copy is undesirable because defmacro change the global environment
+		env.globalEnv.funDict[params[0].value] = lisp_forms.Macro(argNames, params[2], env, params[0].value) # making copy is undesirable because defmacro change the global environment
 		
 		return lisp_forms.Symbol(params[0].value)
 
