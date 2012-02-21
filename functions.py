@@ -1,34 +1,47 @@
 # -*- coding: utf-8 -*-
 
-import interpreter
+import lisp_forms
+from helpers import *
 
-class Plus:
+class Plus(lisp_forms.Function):
+	def __init__(self):
+		pass
+	
 	def funcall(self, params):
 		res = 0
 		while len(params):
 			res += params.pop(0).value
-		return interpreter.Number(res)
+		return lisp_forms.Number(res)
 
-class Minus:
+class Minus(lisp_forms.Function):
+	def __init__(self):
+		pass	
+	
 	def funcall(self, params):
 		if len(params) == 0:
-			raise interpreter.BadInputException("Invalid number of arguments: 0")
+			raise BadInputException("Invalid number of arguments: 0")
 		
 		res = params.pop(0).value
 		while len(params):
 			res -= params.pop(0).value
-		return interpreter.Number(res)
+		return lisp_forms.Number(res)
 	
-class Mul:
+class Mul(lisp_forms.Function):
+	def __init__(self):
+		pass		
+	
 	def funcall(self, params):
 		res = 1
 		while len(params):
 			res *= params.pop().value
-		return interpreter.Number(res)
+		return lisp_forms.Number(res)
 		
-class Equal:
+class Equal(lisp_forms.Function):
+	def __init__(self):
+		pass		
+	
 	def funcall(self, params):
 		for param in params:
 			if param.value != params[0].value:
-				return interpreter.getNil()
-		return interpreter.Number("T")
+				return getNil()
+		return lisp_forms.Number("T")

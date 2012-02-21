@@ -1,21 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
-
-SYNTAX_ERROR = 0
-INT = 1
-FLOAT = 2
-DOUBLE = 3
-STRING = 4;
-OPENING_PARENTHESIS = 5
-CLOSING_PARENTHESIS = 6
-SYMBOL = 7
-RATIO = 8
-QUOTE = 9
-BACKQUOTE = 10
-COMMA_AT = 11
-COMMA = 12
-HASH = 13
-EOF = 14
+from interpreter_consts import *
 
 class Token:
 	def __init__(self, tokenId, value):

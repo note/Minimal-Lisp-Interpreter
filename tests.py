@@ -188,9 +188,9 @@ class TestInterpreter(unittest.TestCase):
 		
 	def testDefmacro(self):
 		self.doTest("when", "(defmacro when (test &rest forms) `(if ,test (progn ,@forms)))")
-		self.doTest(53, "(let ((x 33)) (when (> x 10) (setq x (+ x 10)) (setq x (+ x 10))))")
+		print "start!!!"
+		self.doTest(53, "(let ((x 33)) (when (= x 33) (setq x (+ x 10)) (setq x (+ x 10))))")
 		
-	
 	def testRest(self):
 		self.doTest("f", "(defun f (x &rest r) ( car (cdr r)))")
 		self.assertEqual(5, self.interpreter.evalExpression("(f 1 4 5 8 9)").getValue())
