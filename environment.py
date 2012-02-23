@@ -19,3 +19,4 @@ class Environment:
 		if val:
 			return val
 		return self.globalEnv.funDict.get(fnName)
+		

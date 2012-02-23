@@ -280,8 +280,6 @@ class Eval:
 			raise BadInputException("eval expects one argument (got " + str(len(params)) + " arguments)")
 		
 		tmp = params[0].evaluate(env)
-		print "EVAL"
-		print tmp.getValue()
 		return tmp.evaluate(env)
 
 operatorsDict = {
