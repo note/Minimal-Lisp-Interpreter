@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest
+import subprocess
 import tokenizer
 from tokenizer import nextToken
 from interpreter import *
@@ -219,6 +220,11 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(16, self.interpreter.evalExpression("(let ((fn (lambda (x) (* x x)))) (funcall fn 4))").getValue())
 		self.doTest("f", "(defun f (x) (* x x))")
 		self.assertEqual(9, self.interpreter.evalExpression("(funcall #'f 3)").getValue())
+		
+	def testReadFile(self):
+		subprocess.call(["python", "interpreter.py", "test.lisp"], stdout=open("out.txt", "w"))
+		f = open("out.txt", "r")
+		self.assertEqual("8\n", f.read())
 		
 	'''Difference between global scope and any other:
 		(let ((a 15)) (progn (defun h(x) (* x a b)) (setf a 10)))

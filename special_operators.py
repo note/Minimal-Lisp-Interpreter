@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import interpreter
+
 import functions
 import lisp_forms
 from interpreter_exceptions import BadInputException, InterpreterException
