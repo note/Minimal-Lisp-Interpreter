@@ -19,6 +19,9 @@ class Interpreter:
 		"=": functions.Equal()
 	}	
 	
+	def __init__(self):
+		self.interpretFile("std_lib.lisp")
+	
 	def read(self, text):
 		form = List()
 		text = self.readForm(form, text, False)[1]
@@ -72,14 +75,18 @@ class Interpreter:
 			
 	def evalExpression(self, text):
 		return self.evalExpr(text, {"NIL" : getNil(), "T" : Symbol("T")})
+	
+	# throws IOError when file cannot be opened	
+	def interpretFile(self, filename):
+		f = open(filename, 'r')
+		str = f.read()
+		return self.evalExpression(str).getValue()
 
 def main(argv=sys.argv):
 	interpreter = Interpreter()
 	if len(argv)>1:
 		try:
-			f = open(argv[1], 'r')
-			str = f.read()
-			print interpreter.evalExpression(str).getValue()
+			print interpreter.interpretFile(argv[1])
 		except IOError:
 			print "File " + argv[1] + " cannot be opened"
 	

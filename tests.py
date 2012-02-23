@@ -91,7 +91,6 @@ class TestInterpreter(unittest.TestCase):
 		#self.doTest("'(x)", "''(x)")
 		
 	def testBackQuote(self):
-		self.interpreter.evalExpression("(defun list (&rest rest) rest)")
 		self.doTest("(+ x 5)", "`(+ x 5)")
 		self.doTest("x", "(let ((x 12)) `x)")
 		self.doTest("x", "`x")
@@ -109,8 +108,6 @@ class TestInterpreter(unittest.TestCase):
 		self.doTest("(22)", "(let ((x ())) (cons 22 x))")
 	
 	def testList(self):
-		#self.interpreter.evalExpression("(defun list (&rest rest) (let ((x NIL)) (defun list2 (&rest rest) (if (car rest) (setq x (cons (car rest) x)) NIL)) (progn (list2 rest) (car x))))")
-		self.interpreter.evalExpression("(defun list (&rest rest) rest)")
 		self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(list (+ x 5))"))
 		self.doTest("(3 4 5)", "(list 3 4 5)")
 		
@@ -120,8 +117,6 @@ class TestInterpreter(unittest.TestCase):
 		self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(list))"))
 		
 	def testCar(self):
-		self.interpreter.evalExpression("(defun list (&rest rest) rest)")
-		
 		self.doTest("NIL", "(car ())")
 		self.doTest("NIL", "(car NIL)")
 		self.doTest(5, "(car (cons 5 ()))")
@@ -132,8 +127,6 @@ class TestInterpreter(unittest.TestCase):
 		self.doTest("(5 6)", "(car (list (list 5 6) 9 10))")
 		
 	def testCdr(self):
-		self.interpreter.evalExpression("(defun list (&rest rest) rest)")
-		
 		self.doTest("(2 4)", "(cdr (quote (+ 2 4)))")
 		self.doTest("NIL", "(cdr (list 2))")
 		self.doTest("NIL", "(cdr (list))")
@@ -146,7 +139,6 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(5, self.interpreter.evalExpression("(eval `(+ 3 2))").getValue())
 		
 	def testAtom(self):
-		self.interpreter.evalExpression("(defun list (&rest rest) rest)")
 		self.doTest("T", "(atom (+ 4 3))")
 		self.doTest("T", "(atom (quote 43))")
 		self.doTest("T", "(atom (quote ()))")

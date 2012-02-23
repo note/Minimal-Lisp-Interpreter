@@ -20,7 +20,7 @@ def patterns():
 	end = "(\\)|[\\s]|\Z)";
 	exp = "[de][0-9]+";
 	
-	# it's important to remember abour proper grouping in all regular expressions
+	# it's important to remember about proper grouping in all regular expressions
 	p = []
 	p.append(createTokenPattern(OPENING_PARENTHESIS, "^(\()"))
 	p.append(createTokenPattern(CLOSING_PARENTHESIS, "^(\))"))
