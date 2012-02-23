@@ -214,7 +214,7 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(9, self.interpreter.evalExpression("(funcall #'f 3)").getValue())
 		
 	def testReadFile(self):
-		subprocess.call(["python", "interpreter.py", "test.lisp"], stdout=open("out.txt", "w"))
+		subprocess.call(["python", "lisp_interpreter.py", "test.lisp"], stdout=open("out.txt", "w"))
 		f = open("out.txt", "r")
 		self.assertEqual("8\n", f.read())
 		

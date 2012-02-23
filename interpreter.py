@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import sys
 import tokenizer
 import functions
 import special_operators
@@ -81,14 +80,16 @@ class Interpreter:
 		f = open(filename, 'r')
 		str = f.read()
 		return self.evalExpression(str).getValue()
+		
+	def startInteractiveMode(self):
+		input = raw_input(">>> ")
+		while input != "quit":
+			try:
+				print self.evalExpression(input).getValue()
+			except BadInputException as exception:
+				print exception.msg
+			input = raw_input(">>> ")
 
-def main(argv=sys.argv):
+if __name__ == '__main__':
 	interpreter = Interpreter()
-	if len(argv)>1:
-		try:
-			print interpreter.interpretFile(argv[1])
-		except IOError:
-			print "File " + argv[1] + " cannot be opened"
-	
-if __name__ == "__main__":
-	main()
+	interpreter.startInteractiveMode()
