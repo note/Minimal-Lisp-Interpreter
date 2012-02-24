@@ -196,17 +196,38 @@ class TestInterpreter(unittest.TestCase):
 		# condition is not satisfied - no side effects which means that parameters wasn't evaluated
 		self.doTest(33, "(let ((x 33)) (progn (when. (= x 34) (setq x (+ x 10)) (setq x (+ x 10))) x))")
 		
-		''' (let ((rev (lambda (l res) (if (car l) (rr (cdr l) (cons (car l) res)) res))))
-	   (defun reverse. (l)
-	     (funcall rev l (list)))) '''
-		#self.doTest("backwards", "(defmacro backwards (code) (reverse code))")
-		#self.doTest(5, "(backwards (3 2 +))")
+		self.doTest("backwards", "(defmacro backwards (code) (reverse code))")
+		self.doTest(5, "(backwards (3 2 +))")
+		
+		# check if deeper macro expanding works
+		self.doTest(2, "(backwards (2 (= 3 3) when))")
+		self.doTest("NIL", "(backwards (2 (= 4 3) when))")
+		
+		self.doTest("f", "(defmacro f (x) `(when ,x 3))")
+		self.doTest(3, "(f (= 6 6))")
+		self.doTest("NIL", "(f (= 6 2))")
+
 		
 	def testRest(self):
 		self.doTest("f", "(defun f (x &rest r) ( car (cdr r)))")
 		self.assertEqual(5, self.interpreter.evalExpression("(f 1 4 5 8 9)").getValue())
 		self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(def gg (x &rest) x)"))
 		self.assertRaises(BadInputException, self.interpreter.evalExpression, ("(def gg (x &rest rest abc) x)"))
+		
+	def testOptional(self):
+		self.doTest("f", "(defun f (a &optional (b 3) (c 4)) (+ a b c))")
+		self.doTest(9, "(f 2)")
+		self.doTest(12, "(f 2 8 2)")
+		
+		self.doTest("g", "(defun g (a &optional b) b)")
+		self.doTest("NIL", "(g 3)")
+		self.doTest(55, "(g 33 55)")
+		
+	def testKey(self):
+		self.doTest("f", "(defun f (&key a b c) (list a b c))")
+		self.doTest("(2 4 6)", "(f 2 4 6)")
+		self.doTest("(2 4 6)", "(f :b 4 :c 6 :a 2)")
+		self.doTest("(2 NIL 6)", "(f :c 6 :a 2)")
 	
 	def testFuncall(self):
 		self.assertEqual(16, self.interpreter.evalExpression("(let ((fn (lambda (x) (* x x)))) (funcall fn 4))").getValue())
