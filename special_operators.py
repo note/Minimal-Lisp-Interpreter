@@ -7,6 +7,10 @@ from environment import *
 from helpers import *
 from interpreter_consts import *
 
+def checkNumberOfParams(expected, actual, operatorName):
+	if expected != actual:
+		raise BadInputException("Special operator " + operatorName + " expects " + str(expected) + " arguments (got " + str(actual) + " arguments")
+	return True	
 
 class IfOperator:
 	def evaluate(self, params, env, **rest):
@@ -76,10 +80,8 @@ class Setq:
 		
 class Quote:
 	def evaluate(self, params, env, **rest):
-		if len(params) == 1:
+		if checkNumberOfParams(1, len(params), "quote"):
 			return params[0]
-		else:
-			raise BadInputException("Special operator 'quote' expects 1 argument (got " + str(len(params)) + " arguments)")
 	
 class List:
 	def evaluate(self, params, env, **rest):
@@ -90,167 +92,142 @@ class List:
 		
 class Cons:
 	def evaluate(self, params, env, **rest):
-		if len(params) != 2:
-			raise BadInputException("cons expects 2 arguments (got " + str(len(params)) + " arguments)")
-		
-		res = params[1].evaluate(env)
-		if res.isNil():
-			res = getEmptyList()
+		if checkNumberOfParams(2, len(params), "cons"):
+			res = params[1].evaluate(env)
+			if res.isNil():
+				res = getEmptyList()
+				
+			if res.getType() != LIST:
+				raise BadInputException("second parameter of cons is expected to be a list")
 			
-		if res.getType() != LIST:
-			raise BadInputException("second parameter of cons is expected to be a list")
-		
-		res.children.insert(0, params[0].evaluate(env))
-		return res
-		
+			res.children.insert(0, params[0].evaluate(env))
+			return res
 	
 class Car:
 	def evaluate(self, params, env, **rest):
-		if len(params) != 1:
-			raise BadInputException("car expects " + 1 + " argument (got " + str(len(params)) + " arguments)")
-		
-		res = params[0].evaluate(env)
-		
-		if res.isNil():
-			res = getEmptyList()
-		
-		if res.getType() != LIST: 
-			raise BadInputException("The value " + str(res.value) + " is not a list")
-		
-		if len(res.children) == 0:
-			return getNil()
-		return res.children[0]
+		if checkNumberOfParams(1, len(params), "car"):
+			res = params[0].evaluate(env)
+			
+			if res.isNil():
+				res = getEmptyList()
+			
+			if res.getType() != LIST: 
+				raise BadInputException("The value " + str(res.value) + " is not a list")
+			
+			if len(res.children) == 0:
+				return getNil()
+			return res.children[0]
 	
 class Cdr:
 	def evaluate(self, params, env, **rest):
-		if len(params) != 1:
-			raise BadInputException("cdr expects " + 1 + " argument (got " + str(len(params)) + " arguments)")
-		
-		res = params[0].evaluate(env)
-		
-		if res.getType() != LIST:
-			raise BadInputException("The value " + str(res.value) + " is not a list")
-		
-		if len(res.children) < 2:
-			return getNil()
+		if checkNumberOfParams(1, len(params), "cdr"):
+			res = params[0].evaluate(env)
 			
-		form = lisp_forms.List()
-		form.children = res.children[1:]
-		return form
+			if res.getType() != LIST:
+				raise BadInputException("The value " + str(res.value) + " is not a list")
+			
+			if len(res.children) < 2:
+				return getNil()
+				
+			form = lisp_forms.List()
+			form.children = res.children[1:]
+			return form
 	
 class Eval:
 	def evaluate(self, params, env, **rest):
-		if len(params) != 1:
-			raise BadInputException("eval expects " + 1 + " argument (got " + str(len(params)) + " arguments)")
-		
-		expr = params[0].evaluate(env)
-		return expr.evaluate(env)
+		if checkNumberOfParams(1, len(params), "eval"):
+			expr = params[0].evaluate(env)
+			return expr.evaluate(env)
 	
 class Atom:
 	def evaluate(self, params, env, **rest):
-		if len(params) != 1:
-			raise BadInputException("atom expects " + 1 + " argument (got " + str(len(params)) + " arguments)")
-		
-		res = params[0].evaluate(env)
-		if res.getType() == LIST:
-			if len(res.children) == 0:
-				return lisp_forms.Symbol("T")
-			else:
-				return getNil()
-				
-		return lisp_forms.Symbol("T")
+		if checkNumberOfParams(1, len(params), "atom"):
+			res = params[0].evaluate(env)
+			if res.getType() == LIST:
+				if len(res.children) == 0:
+					return lisp_forms.Symbol("T")
+				else:
+					return getNil()
+					
+			return lisp_forms.Symbol("T")
 	
 class Backquote:
 	def evaluate(self, params, env, **rest):
-		# this should never occur because backquote operator is implicitely added by interpreter. But it still can be useful for debugging purposes
-		if len(params) != 1:
-			raise BadInputException("backquote expects " + str(1) + " argument (got " + str(len(params)) + " arguments)")
-		
-		if params[0].getType() != LIST:
-			return params[0]
-		else:
-			res = lisp_forms.List()
-			
-			for ch in params[0].children:
-				res.children[len(res.children):] = ch.evaluateIfComma(env, **rest)
-			return res
+		if checkNumberOfParams(1, len(params), "backquote"):
+			if params[0].getType() != LIST:
+				return params[0]
+			else:
+				res = lisp_forms.List()
+				
+				for ch in params[0].children:
+					res.children[len(res.children):] = ch.evaluateIfComma(env, **rest)
+				return res
 		
 class Comma:
 	def evaluate(self, params, env, **rest):
-		# this should never occur because comma operator is implicitely added by interpreter. But it still can be useful for debugging purposes
-		if len(params) != 1:
-			raise BadInputException("comma expects " + str(1) + " argument (got " + str(len(params)) + " arguments)")
-		
-		if "calledByBackquote" in rest:
-			raise BadInputException("comma must occurs inside backquote block")
-		
-		return params[0].evaluate(env)
+		if checkNumberOfParams(1, len(params), "comma"):
+			if "calledByBackquote" in rest:
+				raise BadInputException("comma must occurs inside backquote block")
+			
+			return params[0].evaluate(env)
 		
 	def evaluateIfComma(self, params, env, **rest):
 		return self.evaluate(params, env, **rest)
 		
 class Lambda:
 	def evaluate(self, params, env, fnName="#<FUNCTION LAMBDA>"):
-		if len(params) != 2:
-			raise BadInputException("lambda expects " + str(2) + " arguments (got " + str(len(params)) + " arguments)")
-		
-		if params[0].getType() != LIST:
-			raise BadInputException("missing lambda list")
-		
-		argNames = []
-		for argName in params[0].children:
-			if argName.getType() != SYMBOL:
-				raise BadInputException("each element of lambda list is expected to be a symbol")
-			argNames.append(argName.value)
+		if checkNumberOfParams(2, len(params), "lambda"):
+			if params[0].getType() != LIST:
+				raise BadInputException("missing lambda list")
 			
-		return lisp_forms.Function(argNames, params[1], env, fnName)
+			argNames = []
+			for argName in params[0].children:
+				if argName.getType() != SYMBOL:
+					raise BadInputException("each element of lambda list is expected to be a symbol")
+				argNames.append(argName.value)
+				
+			return lisp_forms.Function(argNames, params[1], env, fnName)
 	
 class Defun:
 	def evaluate(self, params, env):
-		if len(params) != 3:
-			raise BadInputException("defun expects " + str(3) + " arguments (got " + str(len(params)) + " arguments)")
-		
-		if params[0].getType() != SYMBOL:
-			raise BadInputException("first element of defun is expected to be a symbol")
-		
-		env.globalEnv.funDict[params[0].value] = Lambda().evaluate(params[1:], env, "#<FUNCTION " + params[0].value + ">") # making copy is undesirable because defun change the global environment
-		
-		return lisp_forms.Symbol(params[0].value)
+		if checkNumberOfParams(3, len(params), "defun"):
+			if params[0].getType() != SYMBOL:
+				raise BadInputException("first element of defun is expected to be a symbol")
+			
+			env.globalEnv.funDict[params[0].value] = Lambda().evaluate(params[1:], env, "#<FUNCTION " + params[0].value + ">") # making copy is undesirable because defun change the global environment
+			
+			return lisp_forms.Symbol(params[0].value)
 
 class Defmacro:
 	def evaluate(self, params, env, **rest):
-		if len(params) != 3:
-			raise BadInputException("defmacro expects three arguments(got " + str(len(params)) + " arguments)")
+		if checkNumberOfParams(3, len(params), "defmacro"):
+			if params[0].getType() != SYMBOL:
+				raise BadInputException("first element of defun is expected to be a symbol")
+				
+			if params[1].getType() != LIST:
+				raise BadInputException("missing lambda list")
 			
-		if params[0].getType() != SYMBOL:
-			raise BadInputException("first element of defun is expected to be a symbol")
+			argNames = []
+			for argName in params[1].children:
+				if argName.getType() != SYMBOL:
+					raise BadInputException("each element of lambda list is expected to be a symbol")
+				argNames.append(argName.value)
 			
-		if params[1].getType() != LIST:
-			raise BadInputException("missing lambda list")
-		
-		argNames = []
-		for argName in params[1].children:
-			if argName.getType() != SYMBOL:
-				raise BadInputException("each element of lambda list is expected to be a symbol")
-			argNames.append(argName.value)
-		
-		env.globalEnv.funDict[params[0].value] = lisp_forms.Macro(argNames, params[2], env, params[0].value) # making copy is undesirable because defmacro change the global environment
-		
-		return lisp_forms.Symbol(params[0].value)
+			env.globalEnv.funDict[params[0].value] = lisp_forms.Macro(argNames, params[2], env, params[0].value) # making copy is undesirable because defmacro change the global environment
+			
+			return lisp_forms.Symbol(params[0].value)
 
 class Hash:
 	def evaluate(self, params, env, **rest):
-		if len(params) != 1:
-			raise BadInputException("# expects " + str(1) + " argument (got " + str(len(params)) + " arguments)")
-		
-		tmp = params[0].evaluate(env)
-		if tmp.getType() != SYMBOL:
-			raise BadInputException("first parameter of # should evaluate to function name")
-		
-		fn = env.getFunction(tmp.value)
-		if not(fn):
-			raise BadInputException("first parameter of # should evaluate to function name")
-		return fn.evaluate(env)
+		if checkNumberOfParams(1, len(params), "hash"):
+			tmp = params[0].evaluate(env)
+			if tmp.getType() != SYMBOL:
+				raise BadInputException("first parameter of # should evaluate to function name")
+			
+			fn = env.getFunction(tmp.value)
+			if not(fn):
+				raise BadInputException("first parameter of # should evaluate to function name")
+			return fn.evaluate(env)
 
 class Funcall:
 	def evaluate(self, params, env, **rest):
@@ -276,11 +253,9 @@ class Funcall:
 		
 class Eval:
 	def evaluate(self, params, env, **rest):
-		if len(params) != 1:
-			raise BadInputException("eval expects one argument (got " + str(len(params)) + " arguments)")
-		
-		tmp = params[0].evaluate(env)
-		return tmp.evaluate(env)
+		if checkNumberOfParams(1, len(params), "cdr"):
+			tmp = params[0].evaluate(env)
+			return tmp.evaluate(env)
 
 operatorsDict = {
     "if": IfOperator(),
