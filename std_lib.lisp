@@ -71,15 +71,19 @@
 		(progn (__do end-cond fun)
 		       ,(second end-list)))))
 
-(defun __dotimes (val high-val fun)
-	   (when (< val high-val)
-	     (funcall fun 0)
-	     (__dotimes (+ val 1) high-val fun)))
-
 (defmacro dotimes (header &rest body)
+	   `(do ((,(first header) 0 (+ 1 ,(first header)))) ((= ,(first header) ,(second header)) ,(third header)) ,@body))
+
+(defun __dolist (var-name list fun)
+	   (when (car list)
+	     (funcall fun list)
+	     (__dolist var-name (cdr list) fun)))
+
+(defmacro dolist (header &rest body)
 	   `(let ((,(first header) 0))
-             (let ((fun (lambda (a) (progn ,@body (incf ,(first header))))))
-		(progn (__dotimes 0 ,(second header) fun) 
-		       ,(third header)))))
+	      (let ((fun (lambda (l) (progn
+				       (setq ,(first header) (car l)) ,@body))))
+				 (progn (__dolist ,(first header) ,(second header) fun)
+					,(third header)))))
         
 ;; sequence functions
