@@ -22,7 +22,7 @@ class TestInterpreter(unittest.TestCase):
 	
 	def testDo(self):
 		self.doTest(12, "(do ((i 0 (+ 3 i))) ((> i 10) i) (print i))")
-		self.doTest(28, "(let ((x 10)) (progn (do ((i 0 (+ 3 i))) ((> i 10) x) (setq x (+ x i))) x)")
+		self.doTest(28, "(let ((x 10)) (progn (do ((i 0 (+ 3 i))) ((> i 10) x) (setq x (+ x i))) x))")
 		self.doTest(28, "(let ((x 10)) (do ((i 0 (+ 3 i))) ((> i 10) x) (setq x (+ x i))))")
 		self.doTest(32, "(let ((x 10)) (do ((i 0 (+ 3 i))) ((> i 10) x) (setq x (+ x i)) (incf x)))")
 		

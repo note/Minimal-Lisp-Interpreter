@@ -51,9 +51,15 @@ class Less(Function):
 				return getNil()
 		return lisp_forms.Number("T")
 		
-class Greater(Less):
+class Greater(Function):
 	def funcall(self, params):
-		super(Greater, self).funcall(params)
+		if len(params) < 1:
+			raise BadInputException("invalid number of arguments: 0")
+			
+		for i in xrange(len(params)-1):
+			if params[i].value <= params[i+1].value:
+				return getNil()
+		return lisp_forms.Number("T")
 		
 class Print(Function):
 	def funcall(self, params):
