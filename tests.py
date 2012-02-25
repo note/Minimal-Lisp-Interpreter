@@ -76,6 +76,7 @@ class TestInterpreter(unittest.TestCase):
 		self.doTest(6, "(let ((x 2) (y 4)) (+ x y))")
 		self.doTest(14, "(let ((x 10)) (let ((y 4)) (+ x y)))")
 		self.doTest(20, "(let ((w 4)) (setq w 5) (* w 4))")
+		self.doTest(14, "(let ((x 12)) (let ((ff (lambda (y) (+ x y)))) (let ((x 55)) (funcall ff 2))))")
 		
 	def testProgn(self):
 		self.doTest(5, "(progn 3 5)")
@@ -190,7 +191,7 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(20, self.interpreter.evalExpression("(let ((a 30)) (h 2))").getValue())
 		self.interpreter.evalExpression("(defun fib (x) (if (= x 0) 1 (* x (fib (- x 1)))))")
 		self.assertEqual(120, self.interpreter.evalExpression("(fib 5)").getValue())
-		self.interpreter.evalExpression("(defun mymap (l f) (if (car l) (cons (funcall f (car l)) (mymap (cdr l) f))))")
+		self.doTest("mymap", "(defun mymap (l f) (if (car l) (cons (funcall f (car l)) (mymap (cdr l) f))))")
 		self.doTest("(2 4 6)", "(mymap '(1 2 3) (lambda (x) (* 2 x)))")
 		
 		self.interpreter.evalExpression("(defun last (l) (if (cdr l) (last (cdr l)) (car l)))")
@@ -209,6 +210,9 @@ class TestInterpreter(unittest.TestCase):
 		
 		# condition is not satisfied - no side effects which means that parameters wasn't evaluated
 		self.doTest(33, "(let ((x 33)) (progn (when. (= x 34) (setq x (+ x 10)) (setq x (+ x 10))) x))")
+		
+		self.doTest(44, "(let ((x 44)) (when (= 3 3) x))")
+		self.doTest("x", "(let ((x 44)) (when (= 3 3) 'x))")
 		
 		self.doTest("backwards", "(defmacro backwards (code) (reverse code))")
 		self.doTest(5, "(backwards (3 2 +))")

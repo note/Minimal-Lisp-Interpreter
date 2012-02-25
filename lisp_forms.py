@@ -50,8 +50,10 @@ class List(LispForm):
 		if obj.getType() == FUN_OBJ:
 			return obj.funcall(self.evaluateParams(params, env, **rest))
 		elif obj.getType() == MACRO_OBJ:
-			ev = special_operators.Eval()
-			return ev.evaluate([obj.funcall(params)], env, **rest)
+			tmp = obj.funcall(params)
+			print "MACRO " + obj.value
+			print tmp.getValue()
+			return tmp.evaluate(env, **rest)
 		else:
 			raise InterpreterException("Parameter to callObject should be Function or Macro")
 		
@@ -176,7 +178,7 @@ class Function(LispForm):
 			self.argNames[len(self.argNames)-2] = self.argNames[len(self.argNames)-1]
 			self.argNames.pop() # it cannot be done in one line
 		self.body = body
-		self.env = env
+		self.env = env.getCopy()
 		super(Function, self).__init__(name)
 	
 	# It's a huge difference between Function.funcall and Function.evaluate.
@@ -184,6 +186,7 @@ class Function(LispForm):
 	# The most important thing to notice is two opening parenthesis followed by lambda(the second right after the first). Function.funcall actually call the lambda function.
 	# Function.evaluate is called is called otherwise. It just returns Function objects.
 	def funcall(self, params):
+		env = self.env.getCopy()
 		if self.restPresent:
 			if len(params) < len(self.argNames)-1:
 				raise BadInputException("invalid number of arguments: " + str(len(params)))
@@ -194,15 +197,9 @@ class Function(LispForm):
 			if len(params) != len(self.argNames):
 				raise BadInputException("invalid number of arguments: " + str(len(params)))
 			variables = dict(zip(self.argNames, params))
-		#newVariables = dict(self.env.lexicalEnv.variables.items() + variables.items()) #order is important - in the case of the same keys the values from variables will be taken
-		oldVariables = {}
-		for k, v in variables.iteritems():
-			if k in self.env.lexicalEnv.variables:
-				oldVariables[k] = self.env.lexicalEnv.variables[k]
-			self.env.lexicalEnv.variables[k] = v
-		res = self.body.evaluate(self.env)
-		for k, v in oldVariables.iteritems():
-			self.env.lexicalEnv.variables[k] = oldVariables[k]
+		
+		env.overwriteLexicalVariables(variables)
+		res = self.body.evaluate(env)
 		return res
 	
 	def evaluate(self, params, **rest):

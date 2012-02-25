@@ -17,6 +17,7 @@ class Interpreter:
 		"*": functions.Mul(),
 		"=": functions.Equal(),
 		"<": functions.Less(),
+		">": functions.Greater(),
 		"print": functions.Print()
 	}	
 	

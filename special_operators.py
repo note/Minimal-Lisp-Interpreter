@@ -31,7 +31,7 @@ class Let:
 		if len(params) < 1:
 			raise BadInputException("let expects at least one argument (got " + str(len(params)) + " arguments)")
 		
-		tmp = {}
+		newVariables = {}
 		for initExpr in params[0].children:
 			if len(initExpr.children) > 0:
 				varName = initExpr.children[0]
@@ -41,22 +41,13 @@ class Let:
 				value = getNil()
 			if varName.getType() != SYMBOL:
 				raise BadInputException("Variable name " + str(varName.value) + " is not a symbol")
-			tmp[varName.value] = value
-			
-		oldVariables = {}
-		for k, v in tmp.iteritems():
-			if k in env.lexicalEnv.variables:
-				oldVariables[k] = env.lexicalEnv.variables[k]
-			env.lexicalEnv.variables[k] = v	
+			newVariables[varName.value] = value
 		
-		#newVariables = dict(env.lexicalEnv.variables.items() + tmp.items()) #order is important - in the case of the same keys the values from tmp will be taken
-		#newEnv = Environment(env.globalEnv, Env(newVariables, env.lexicalEnv.funDict))
-				
+		newEnv = env.getCopy()	
+		newEnv.overwriteLexicalVariables(newVariables)
 		res = getNil()
 		for param in params[1:]:
-			res = param.evaluate(env)
-		for k, v in oldVariables.iteritems():
-			env.lexicalEnv.variables[k] = oldVariables[k]	
+			res = param.evaluate(newEnv)
 		return res
 	
 class Progn:
@@ -79,10 +70,10 @@ class Setq:
 			key = params.pop(0)
 			if key.getType() != SYMBOL:
 				raise BadInputException("Variable name " + key.value + " is not a symbol")
-			env.lexicalEnv.variables[key.value] = params.pop(0).evaluate(env)
+			env.setLexicalVariable(key.value, params.pop(0).evaluate(env))
 		
 		if key:
-			return env.lexicalEnv.variables[key.value]
+			return env.getVariable(key.value)
 		else:
 			return intr.getNil()
 		
@@ -254,7 +245,7 @@ class Funcall:
 					raise BadInputException("cannot find function " + params[0].value)
 	
 		args = []
-		for param in params[1:]:
+		for param in params[1:]:			
 			args.append(param.evaluate(env))
 			
 		return fn.funcall(args)

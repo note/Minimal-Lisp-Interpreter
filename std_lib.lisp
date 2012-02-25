@@ -1,6 +1,6 @@
 (defun list (&rest rest) rest)
 
-(defun not (x) (if x NIL T))
+(defun not (app) (if app NIL T))
 
 (defun apply (fun params)
     (eval `(funcall ,fun ,@params)))
@@ -8,8 +8,8 @@
 (defmacro when (test &rest forms)
   `(if ,test (progn ,@forms)))
 
-(defmacro unless (condition &rest body)
-  `(if (not ,condition) (progn ,@body)))
+(defmacro unless (test &rest body)
+  `(if (not ,test) (progn ,@body)))
 
 (defun __reverse (l res) (if (car l) (__reverse (cdr l) (cons (car l) res)) res))
 
@@ -52,14 +52,33 @@
     
 ;; looping
 
+(defun fff (var-list res)
+	   (when (car var-list)
+	     (cons (list (first (first var-list)) (second (first var-list))) (fff (cdr var-list) res))))
+
+(defun ggg (var-list res)
+	   (when (car var-list)
+	     (cons `(setf ,(first (first var-list)) ,(third (first var-list))) (ggg (cdr var-list) res))))
+
+(defun __do (end-condition fun)
+	   (unless (funcall end-condition 0)
+	     (funcall fun 0)
+	     (__do end-condition fun)))
+
+(defmacro do (var-list end-list &rest body)
+	   `(let ,(fff var-list (list))
+	      (let ((fun (lambda (a) (progn ,@body ,@(ggg var-list (list))))) (end-cond (lambda (y) ,(first end-list))))
+		(progn (__do end-cond fun)
+		       ,(second end-list)))))
+
 (defun __dotimes (val high-val fun)
 	   (when (< val high-val)
 	     (funcall fun 0)
 	     (__dotimes (+ val 1) high-val fun)))
 
-(defmacro dotimes (header body)
+(defmacro dotimes (header &rest body)
 	   `(let ((,(first header) 0))
-             (let ((fun (lambda (a) (progn ,body (incf ,(first header))))))
+             (let ((fun (lambda (a) (progn ,@body (incf ,(first header))))))
 		(progn (__dotimes 0 ,(second header) fun) 
 		       ,(third header)))))
         
