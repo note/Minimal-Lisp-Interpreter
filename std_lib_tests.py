@@ -25,6 +25,8 @@ class TestInterpreter(unittest.TestCase):
 		self.doTest(28, "(let ((x 10)) (progn (do ((i 0 (+ 3 i))) ((> i 10) x) (setq x (+ x i))) x))")
 		self.doTest(28, "(let ((x 10)) (do ((i 0 (+ 3 i))) ((> i 10) x) (setq x (+ x i))))")
 		self.doTest(32, "(let ((x 10)) (do ((i 0 (+ 3 i))) ((> i 10) x) (setq x (+ x i)) (incf x)))")
+		self.doTest(450, "(do ((i 0 (+ i 1)) (y 100 (- y 5)) (res 0)) ((= i 5) res) (setq res (+ res y)))")
+		
 		
 	def testDotimes(self):
 		self.doTest(6, "(let ((x 0)) (dotimes (i 4 x) (setq x (+ x i))))")

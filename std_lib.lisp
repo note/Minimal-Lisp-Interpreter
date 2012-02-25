@@ -58,7 +58,9 @@
 
 (defun ggg (var-list res)
 	   (when (car var-list)
-	     (cons `(setq ,(first (first var-list)) ,(third (first var-list))) (ggg (cdr var-list) res))))
+            (if (third (first var-list))
+	     (cons `(setq ,(first (first var-list)) ,(third (first var-list))) (ggg (cdr var-list) res))
+             (ggg (cdr var-list) res))))
 
 (defun __do (end-condition fun)
 	   (unless (funcall end-condition 0)
