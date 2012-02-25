@@ -37,7 +37,6 @@ class Interpreter:
 		(token, text) = tokenizer.nextToken(text)
 		while token.tokenId != EOF:
 			if token.tokenId == SYNTAX_ERROR:
-				print "\n" + text + "**************"
 				raise BadInputException("Syntax error")
 			
 			if token.tokenId == QUOTE or token.tokenId == BACKQUOTE or token.tokenId == COMMA or token.tokenId == HASH or token.tokenId == COMMA_AT:
@@ -68,6 +67,7 @@ class Interpreter:
 		
 		if openedParenthesis:
 			raise BadInputException("Unexpected end of file")
+
 		return (newForm, text)
 
 	def evalExpr(self, text, variables):

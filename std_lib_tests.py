@@ -23,7 +23,7 @@ class TestInterpreter(unittest.TestCase):
 	def testDotimes(self):
 		self.doTest(6, "(let ((x 0)) (dotimes (i 4 x) (setq x (+ x i))))")
 		self.doTest(18, "(let ((x 0) (y 3)) (dotimes (i 4 (* x y)) (setq x (+ x i))))")
-		self.doTest("NIL", "(dotimes (i 4) (setq x (+ x i)))")
+		self.doTest("NIL", "(dotimes (i 4) (print i))")
 		self.doTest(4, "(dotimes (i 4 i) (print i))")
 		
 if __name__ == "__main__":

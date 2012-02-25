@@ -43,12 +43,20 @@ class Let:
 				raise BadInputException("Variable name " + str(varName.value) + " is not a symbol")
 			tmp[varName.value] = value
 			
-		newVariables = dict(env.lexicalEnv.variables.items() + tmp.items()) #order is important - in the case of the same keys the values from tmp will be taken
-		newEnv = Environment(env.globalEnv, Env(newVariables, env.lexicalEnv.funDict))
+		oldVariables = {}
+		for k, v in tmp.iteritems():
+			if k in env.lexicalEnv.variables:
+				oldVariables[k] = env.lexicalEnv.variables[k]
+			env.lexicalEnv.variables[k] = v	
 		
+		#newVariables = dict(env.lexicalEnv.variables.items() + tmp.items()) #order is important - in the case of the same keys the values from tmp will be taken
+		#newEnv = Environment(env.globalEnv, Env(newVariables, env.lexicalEnv.funDict))
+				
 		res = getNil()
 		for param in params[1:]:
-			res = param.evaluate(newEnv)
+			res = param.evaluate(env)
+		for k, v in oldVariables.iteritems():
+			env.lexicalEnv.variables[k] = oldVariables[k]	
 		return res
 	
 class Progn:

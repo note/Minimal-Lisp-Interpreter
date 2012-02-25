@@ -28,6 +28,10 @@
 
 ;;(defmacro dotimes (header &rest body)
 ;;    )
+
+;; arithmetic
+(defmacro incf (var-name)
+    `(setq ,var-name (+ ,var-name 1)))
     
 ;; list functions
 (defun nth (index list)
@@ -50,12 +54,13 @@
 
 (defun __dotimes (val high-val fun)
 	   (when (< val high-val)
-	     (funcall fun val)
+	     (funcall fun 0)
 	     (__dotimes (+ val 1) high-val fun)))
 
 (defmacro dotimes (header body)
-	   `(let ((fun (lambda (,(first header)) ,body)))
+	   `(let ((,(first header) 0))
+             (let ((fun (lambda (a) (progn ,body (incf ,(first header))))))
 		(progn (__dotimes 0 ,(second header) fun) 
-		       ,(third header))))
+		       ,(third header)))))
         
 ;; sequence functions
