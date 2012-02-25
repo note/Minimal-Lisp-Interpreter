@@ -3,6 +3,7 @@ import unittest
 import subprocess
 import tokenizer
 from tokenizer import nextToken
+from interpreter_consts import *
 from interpreter import *
 
 class TestInterpreter(unittest.TestCase):
@@ -13,21 +14,24 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(expectedValue, self.interpreter.evalExpression(inputStr).getValue())
 	
 	def testNextToken(self):
-		self.assertEqual(tokenizer.EOF, nextToken("")[0].tokenId)
-		self.assertEqual(tokenizer.INT, nextToken("44")[0].tokenId)
-		self.assertEqual(tokenizer.INT, nextToken("	44")[0].tokenId)
-		self.assertEqual(tokenizer.INT, nextToken("  44 here")[0].tokenId)
-		self.assertEqual(tokenizer.INT, nextToken("+435")[0].tokenId)
-		self.assertEqual(tokenizer.INT, nextToken("-34")[0].tokenId)
-		self.assertEqual(tokenizer.SYMBOL, nextToken("33e")[0].tokenId)
-		self.assertEqual(tokenizer.DOUBLE, nextToken("34d0")[0].tokenId)
-		self.assertEqual(tokenizer.DOUBLE, nextToken("34d0")[0].tokenId)
-		self.assertEqual(tokenizer.DOUBLE, nextToken("34.43d0")[0].tokenId)
-		self.assertEqual(tokenizer.DOUBLE, nextToken("0.d55")[0].tokenId)
-		self.assertEqual(tokenizer.FLOAT, nextToken(" 3.3")[0].tokenId)
-		self.assertEqual(tokenizer.SYMBOL, nextToken("abc ( )")[0].tokenId)
-		self.assertEqual(tokenizer.SYMBOL, nextToken("read-in")[0].tokenId)
-		self.assertEqual(tokenizer.OPENING_PARENTHESIS, nextToken("  (cos")[0].tokenId)
+		self.assertEqual(EOF, nextToken("")[0].tokenId)
+		self.assertEqual(INT, nextToken("44")[0].tokenId)
+		self.assertEqual(INT, nextToken("	44")[0].tokenId)
+		self.assertEqual(INT, nextToken("  44 here")[0].tokenId)
+		self.assertEqual(INT, nextToken("+435")[0].tokenId)
+		self.assertEqual(INT, nextToken("-34")[0].tokenId)
+		self.assertEqual(SYMBOL, nextToken("33e")[0].tokenId)
+		self.assertEqual(DOUBLE, nextToken("34d0")[0].tokenId)
+		self.assertEqual(DOUBLE, nextToken("34d0")[0].tokenId)
+		self.assertEqual(DOUBLE, nextToken("34.43d0")[0].tokenId)
+		self.assertEqual(DOUBLE, nextToken("0.d55")[0].tokenId)
+		self.assertEqual(FLOAT, nextToken(" 3.3")[0].tokenId)
+		self.assertEqual(STRING, nextToken('"some"')[0].tokenId)
+		self.assertEqual(STRING, nextToken('"hello world"')[0].tokenId)
+		self.assertEqual("", nextToken('"hello world"')[1])
+		self.assertEqual(SYMBOL, nextToken("abc ( )")[0].tokenId)
+		self.assertEqual(SYMBOL, nextToken("read-in")[0].tokenId)
+		self.assertEqual(OPENING_PARENTHESIS, nextToken("  (cos")[0].tokenId)
 		
 		self.assertEqual(" cos", nextToken("435 cos")[1])
 		self.assertEqual(" cos", nextToken(") cos")[1])
@@ -53,6 +57,11 @@ class TestInterpreter(unittest.TestCase):
 	def testEval(self):
 		self.doTest(9, "(eval '(+ 4 5))")
 		self.doTest(99, "(eval '(let ((x 2)) (progn (setq x 99) x)))")
+		
+	def testArithmetic(self):
+		self.doTest("T", "(< 4 5 10 22)")
+		self.doTest("NIL", "(< 44 22)")
+		self.doTest("NIL", "(< 2 5 5 6)")
 		
 	def testIfOperator(self):
 		self.doTest(11, "(if 43 11 10)")
@@ -187,6 +196,11 @@ class TestInterpreter(unittest.TestCase):
 		self.interpreter.evalExpression("(defun last (l) (if (cdr l) (last (cdr l)) (car l)))")
 		self.assertEqual(6, self.interpreter.evalExpression("(last '(3 4 6))").getValue())
 		
+		self.doTest("h", "(let ((yy 33)) (defun h () (progn (setq yy (+ yy 10)) yy)))")
+		self.doTest(43, "(h)")
+		self.doTest(53, "(h)")
+		self.doTest(63, "(let ((yy 1)) (h))")
+		
 	def testDefmacro(self):
 		self.doTest("when.", "(defmacro when. (test &rest forms) `(if ,test (progn ,@forms)))")
 		
@@ -223,11 +237,27 @@ class TestInterpreter(unittest.TestCase):
 		self.doTest("NIL", "(g 3)")
 		self.doTest(55, "(g 33 55)")
 		
+		self.doTest("foo", "(defun foo (a b &optional (c 3 c-supplied-p)) (list a b c c-supplied-p))")
+		self.doTest("(1 2 3 NIL", "(foo 1 2)")
+		self.doTest("(1 2 3 T)", "(foo 1 2 3)")
+		self.doTest("(1 2 4 T)", "(foo 1 2 4)")
+		
 	def testKey(self):
 		self.doTest("f", "(defun f (&key a b c) (list a b c))")
 		self.doTest("(2 4 6)", "(f 2 4 6)")
 		self.doTest("(2 4 6)", "(f :b 4 :c 6 :a 2)")
 		self.doTest("(2 NIL 6)", "(f :c 6 :a 2)")
+		
+		self.doTest("foo", "(defun foo (&key (a 0) (b 0 b-supplied-p) (c (+ a b))) (list a b c b-supplied-p))")
+
+		self.doTest("(1 0 1 NIL", "(foo :a 1)")
+		self.doTest("(0 1 1 T)", "(foo :b 1)")
+		self.doTest("(0 1 4 T)", "(foo :b 1 :c 4)")
+		self.doTest("(2 1 4 T)", "(foo :a 2 :b 1 :c 4)")
+		
+	def testString(self):
+		self.doTest("hello world", '"hello world"')
+		self.doTest("hello", '(let ((x "hello")) x)')
 	
 	def testFuncall(self):
 		self.assertEqual(16, self.interpreter.evalExpression("(let ((fn (lambda (x) (* x x)))) (funcall fn 4))").getValue())

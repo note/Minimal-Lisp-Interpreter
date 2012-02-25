@@ -73,7 +73,6 @@ class List(LispForm):
 				if fun:
 					return self.callObject(fun, self.children[1:], env, **rest)					
 				else:
-					print env.lexicalEnv.variables
 					raise BadInputException("The function " + firstChild.value + " is undefined")
 		elif firstChild.getType() == FUN_OBJ:
 			return self.callObject(firstChild, self.children[1:], env, **rest)
@@ -195,9 +194,16 @@ class Function(LispForm):
 			if len(params) != len(self.argNames):
 				raise BadInputException("invalid number of arguments: " + str(len(params)))
 			variables = dict(zip(self.argNames, params))
-		newVariables = dict(self.env.lexicalEnv.variables.items() + variables.items()) #order is important - in the case of the same keys the values from variables will be taken
-		newEnv = Environment(self.env.globalEnv, Env(newVariables, self.env.lexicalEnv.funDict))
-		return self.body.evaluate(newEnv)
+		#newVariables = dict(self.env.lexicalEnv.variables.items() + variables.items()) #order is important - in the case of the same keys the values from variables will be taken
+		oldVariables = {}
+		for k, v in variables.iteritems():
+			if k in self.env.lexicalEnv.variables:
+				oldVariables[k] = self.env.lexicalEnv.variables[k]
+			self.env.lexicalEnv.variables[k] = v
+		res = self.body.evaluate(self.env)
+		for k, v in oldVariables.iteritems():
+			self.env.lexicalEnv.variables[k] = oldVariables[k]
+		return res
 	
 	def evaluate(self, params, **rest):
 		return self

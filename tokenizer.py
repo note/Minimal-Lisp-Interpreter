@@ -53,8 +53,11 @@ def nextToken(text):
 		res = p.search(text)
 		if res:
 			if id == COMMENT:
+				# if comment then ignore the rest of line
 				text = re.sub('(([^\n]*\n)|([^\n]*$))', '', text, 1)
 				return nextToken(text)
+			if id == STRING:
+				return (Token(id, res.group(1)), text[res.end(1)+1:])
 			return (Token(id, res.group(1)), text[res.end(1):])
 			
 	return (Token(SYNTAX_ERROR, None), text)

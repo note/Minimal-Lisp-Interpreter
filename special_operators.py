@@ -40,7 +40,7 @@ class Let:
 				varName = initExpr
 				value = getNil()
 			if varName.getType() != SYMBOL:
-				raise BadInputException("Variable name " + varName.value + " is not a symbol")
+				raise BadInputException("Variable name " + str(varName.value) + " is not a symbol")
 			tmp[varName.value] = value
 			
 		newVariables = dict(env.lexicalEnv.variables.items() + tmp.items()) #order is important - in the case of the same keys the values from tmp will be taken
