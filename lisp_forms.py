@@ -82,9 +82,9 @@ class List(LispForm):
 			raise BadInputException("The first element of list should be a symbol\n")
 			
 	def evaluateIfComma(self, env, **rest):
-		if self.children[0].getType() == SYMBOL and self.children[0].value == ",":
+		if len(self.children) and self.children[0].getType() == SYMBOL and self.children[0].value == ",":
 			return [self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)]
-		elif self.children[0].getType() == SYMBOL and self.children[0].value == ",@":
+		elif len(self.children) and self.children[0].getType() == SYMBOL and self.children[0].value == ",@":
 			res = self.operatorsDict[self.children[0].value].evaluate(self.children[1:], env, **rest)
 			return res.children
 		else:

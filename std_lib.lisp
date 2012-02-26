@@ -52,26 +52,27 @@
     
 ;; looping
 
-(defun fff (var-list res)
+(defun __do-initializer-list (var-list res)
 	   (when (car var-list)
-	     (cons (list (first (first var-list)) (second (first var-list))) (fff (cdr var-list) res))))
+	     (cons (list (first (first var-list)) (second (first var-list))) (__do-initializer-list (cdr var-list) res))))
 
-(defun ggg (var-list res)
+(defun __do-expressions-list (var-list res)
 	   (when (car var-list)
             (if (third (first var-list))
-	     (cons `(setq ,(first (first var-list)) ,(third (first var-list))) (ggg (cdr var-list) res))
-             (ggg (cdr var-list) res))))
+	     (cons `(setq ,(first (first var-list)) ,(third (first var-list))) (__do-expressions-list (cdr var-list) res))
+             (__do-expressions-list (cdr var-list) res))))
 
 (defun __do (end-condition fun)
-	   (unless (funcall end-condition 0)
-	     (funcall fun 0)
+	   (unless (funcall end-condition)
+	     (funcall fun)
 	     (__do end-condition fun)))
 
 (defmacro do (var-list end-list &rest body)
-	   `(let ,(fff var-list (list))
-	      (let ((fun (lambda (a) (progn ,@body ,@(ggg var-list (list))))) (end-cond (lambda (y) ,(first end-list))))
-		(progn (__do end-cond fun)
-		       ,(second end-list)))))
+	   `(let ((fun-name (gensym)) (end-cond-name (gensym)))
+	     (let ,(__do-initializer-list var-list (list))
+	      (let ((fun-name (lambda () (progn ,@body ,@(__do-expressions-list var-list (list))))) (end-cond-name (lambda () ,(first end-list))))
+		(progn (__do end-cond-name fun-name)
+		       ,(second end-list))))))
 
 (defmacro dotimes (header &rest body)
 	   `(do ((,(first header) 0 (+ 1 ,(first header)))) ((= ,(first header) ,(second header)) ,(third header)) ,@body))
@@ -82,10 +83,11 @@
 	     (__dolist var-name (cdr list) fun)))
 
 (defmacro dolist (header &rest body)
-	   `(let ((,(first header) 0))
-	      (let ((fun (lambda (l) (progn
+	   `(let ((fun-name (gensym)))
+             (let ((,(first header) 0))
+	      (let ((fun-name (lambda (l) (progn
 				       (setq ,(first header) (car l)) ,@body))))
-				 (progn (__dolist ,(first header) ,(second header) fun)
-					,(third header)))))
+				 (progn (__dolist ,(first header) ,(second header) fun-name)
+					,(third header))))))
         
 ;; sequence functions
