@@ -255,6 +255,15 @@ class Eval:
 		if checkNumberOfParams(1, len(params), "cdr"):
 			tmp = params[0].evaluate(env)
 			return tmp.evaluate(env)
+			
+class Gensym:
+	i = 0
+	def evaluate(self, params, env, **rest):
+		if checkNumberOfParams(0, len(params), "gensym"):
+			res = lisp_forms.Symbol("__##G" + str(Gensym.i))
+			Gensym.i += 1
+			return res
+			
 
 operatorsDict = {
     "if": IfOperator(),
@@ -277,6 +286,7 @@ operatorsDict = {
     "funcall" : Funcall(),
     "cons" : Cons(),
     "eval" : Eval(),
-    "defmacro" : Defmacro()
+    "defmacro" : Defmacro(),
+    "gensym" : Gensym()
 }	
 	

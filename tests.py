@@ -224,7 +224,16 @@ class TestInterpreter(unittest.TestCase):
 		self.doTest("f", "(defmacro f (x) `(when ,x 3))")
 		self.doTest(3, "(f (= 6 6))")
 		self.doTest("NIL", "(f (= 6 2))")
-
+		
+	def testGensym(self):
+		self.doTest("evaluate", "(defmacro evaluate (condition &rest body) `(let ((cond ,condition)) (when cond ,@body)))")
+		self.doTest("T", "(let ((cond 56)) (evaluate (= 3 3) cond))")
+		
+		# the same macro as above except of gensym usage
+		self.doTest("evaluate2", "(defmacro evaluate2 (condition &rest body) `(let ((cond-name (gensym))) (let ((cond-name ,condition)) (when cond-name ,@body))))")
+		self.doTest(56, "(let ((cond 56)) (evaluate2 (= 3 3) cond))")
+		
+		self.assertEqual("__##G", self.interpreter.evalExpression("(gensym)").getValue()[:5])
 		
 	def testRest(self):
 		self.doTest("f", "(defun f (x &rest r) ( car (cdr r)))")
