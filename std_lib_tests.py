@@ -17,8 +17,13 @@ class TestInterpreter(unittest.TestCase):
 		self.doTest(3, "(nth 3 '(0 1 2 3 4 5))")
 		self.doTest("NIL", "(nth 8 '(0 1 2 3 4 5))")
 		
+	def testMapcar(self):
+		self.doTest("(1 4 9 16 25)", "(mapcar (lambda (x) (* x x)) '(1 2 3 4 5))")
+		
 	def testApply(self):
 		self.doTest(5, "(apply #'+ '(2 3))")
+		self.doTest("f", "(defun f (a b c) (list a b c))")
+		self.doTest("(1 (+ 2 3) 6)", "(apply #'f '(1 (+ 2 3) 6))")
 	
 	def testDo(self):
 		self.doTest(12, "(do ((i 0 (+ 3 i))) ((> i 10) i) (print i))")
@@ -37,6 +42,9 @@ class TestInterpreter(unittest.TestCase):
 	def testDolist(self):
 		self.doTest(21, "(let ((res 0)) (dolist (i '(5 6 10) res) (setq res (+ res i))))")
 		self.doTest("NIL", "(let ((res 0)) (dolist (i '(5 6 10)) (setq res (+ res i))))")
+		
+	def testAppend(self):
+		self.doTest("(1 2 3 4 5 6 7 8)", "(append '(1 2 3) '(4) '(5 6 7) '(8))")
 		
 if __name__ == "__main__":
 	unittest.main()

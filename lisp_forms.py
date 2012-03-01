@@ -79,6 +79,7 @@ class List(LispForm):
 		elif firstChild.getType() == FUN_OBJ:
 			return self.callObject(firstChild, self.children[1:], env, **rest)
 		else:
+			print str(self.children[0].value) + ";;;;"
 			raise BadInputException("The first element of list should be a symbol\n")
 			
 	def evaluateIfComma(self, env, **rest):

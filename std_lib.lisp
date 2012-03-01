@@ -2,8 +2,13 @@
 
 (defun not (app) (if app NIL T))
 
+(defun mapcar (function list)
+	   (if (car list)
+	       (cons (funcall function (car list)) (mapcar function (cdr list)))))
+
 (defun apply (fun params)
-    (eval `(funcall ,fun ,@params)))
+    (progn (setq params (mapcar (lambda (x) `(quote ,x)) params)) 
+	   (eval `(funcall ,fun ,@params))))
 
 (defmacro when (test &rest forms)
   `(if ,test (progn ,@forms)))
@@ -32,6 +37,9 @@
 ;; arithmetic
 (defmacro incf (var-name)
     `(setq ,var-name (+ ,var-name 1)))
+
+(defun 1+ (value)
+    (+ value 1))
     
 ;; list functions
 (defun nth (index list)
@@ -49,6 +57,21 @@
 
 (defun third (list)
     (nth 2 list))
+
+(defun list-length (list)
+	   (if (car list)
+	       (1+ (list-length (cdr list)))
+	       0))
+
+(defun __append-two-lists (L1 L2)
+	   (if (car L1)
+	       (cons (car L1) (__append-two-lists (cdr L1) L2))
+	       L2))
+
+(defun append (&rest lists)
+	   (if (> (list-length lists) 1)
+	       (__append-two-lists (car lists) (apply #'append (cdr lists)))
+	       (car lists)))
     
 ;; looping
 
