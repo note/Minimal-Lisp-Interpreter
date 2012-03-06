@@ -50,10 +50,7 @@ class List(LispForm):
 		if obj.getType() == FUN_OBJ:
 			return obj.funcall(self.evaluateParams(params, env, **rest))
 		elif obj.getType() == MACRO_OBJ:
-			tmp = obj.funcall(params)
-			print "MACRO " + obj.value
-			print tmp.getValue()
-			return tmp.evaluate(env, **rest)
+			return obj.funcall(params).evaluate(env, **rest)
 		else:
 			raise InterpreterException("Parameter to callObject should be Function or Macro")
 		
