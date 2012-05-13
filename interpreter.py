@@ -90,7 +90,7 @@ class Interpreter:
 		while input != "quit":
 			try:
 				print self.evalExpression(input).getValue()
-			except BadInputException as exception:
+			except BadInputException, exception:
 				print exception.msg
 			input = raw_input(">>> ")
 

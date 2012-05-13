@@ -7,6 +7,7 @@ from interpreter import Interpreter
 
 def main(argv=sys.argv):
 	interpreter = Interpreter()
+	print "here"
 	if len(argv)>1:
 		if argv[1] == "-h":
 			print "Minimal Lisp Interpreter"
@@ -19,9 +20,12 @@ def main(argv=sys.argv):
 			except IOError:
 				print "File " + argv[1] + " cannot be opened"
 	else: # interactive mode, very simple so far (only one-line expressions)
+		print "a"
 		if subprocess.call(["which", "rlwrap"], stdout=open("/dev/null", "w")) == 0:
-			subprocess.call(["rlwrap", "python", "interpreter.py"])
+			print "b"
+			subprocess.call(["rlwrap", "jython", "interpreter.py"])
 		else:
+			print "c"
 			interpreter.startInteractiveMode()
 	
 if __name__ == "__main__":
