@@ -22,7 +22,7 @@ class Interpreter:
 	}	
 	
 	def __init__(self):
-		self.interpretFile("std_lib.lisp")
+		self.interpretFile("lisp/std_lib.lisp")
 	
 	def read(self, text):
 		form = List()

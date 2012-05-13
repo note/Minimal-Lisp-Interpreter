@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import unittest
 import subprocess
-import tokenizer
-from tokenizer import nextToken
-from interpreter_consts import *
-from interpreter import *
+from src.tokenizer import nextToken
+from src.interpreter_consts import *
+from src.interpreter import *
 
 class TestInterpreter(unittest.TestCase):
 	def setUp(self):

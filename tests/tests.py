@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import unittest
 import subprocess
-import tokenizer
-from tokenizer import nextToken
-from interpreter_consts import *
-from interpreter import *
+from src.tokenizer import nextToken
+from src.interpreter_consts import *
+from src.interpreter import *
 
 class TestInterpreter(unittest.TestCase):
 	def setUp(self):
@@ -278,7 +277,7 @@ class TestInterpreter(unittest.TestCase):
 		self.assertEqual(9, self.interpreter.evalExpression("(funcall #'f 3)").getValue())
 		
 	def testReadFile(self):
-		subprocess.call(["python", "lisp_interpreter.py", "test.lisp"], stdout=open("out.txt", "w"))
+		subprocess.call(["python", "lisp_interpreter.py", "lisp/test.lisp"], stdout=open("out.txt", "w"))
 		f = open("out.txt", "r")
 		self.assertEqual("8\n", f.read())
 		

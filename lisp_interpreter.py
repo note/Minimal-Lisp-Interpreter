@@ -3,7 +3,7 @@
 
 import subprocess
 import sys
-from interpreter import Interpreter
+from src.interpreter import Interpreter
 
 def main(argv=sys.argv):
 	interpreter = Interpreter()
@@ -20,7 +20,7 @@ def main(argv=sys.argv):
 				print "File " + argv[1] + " cannot be opened"
 	else: # interactive mode, very simple so far (only one-line expressions)
 		if subprocess.call(["which", "rlwrap"], stdout=open("/dev/null", "w")) == 0:
-			subprocess.call(["rlwrap", "python", "interpreter.py"])
+			subprocess.call(["rlwrap", "python", "src/interpreter.py"])
 		else:
 			interpreter.startInteractiveMode()
 	
